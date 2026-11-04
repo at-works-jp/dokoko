@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>運営用｜どこ高ポータル</title>
+<style>
+  :root{ --bg:#f6f3ec; --ink:#1d232b; --sub:#6b6258; --accent:#c83c28; --card:#fff; --line:#e4dccd; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif; line-height:1.6; }
+  .wrap{ max-width:760px; margin:0 auto; padding:24px 16px 60px; }
+  .brand{ font-size:12px; letter-spacing:.2em; color:var(--accent); font-weight:700; }
+  h1{ font-size:22px; margin:4px 0 2px; } h2{ font-size:14px; color:var(--sub); margin:22px 0 8px; letter-spacing:.05em; }
+  .sub{ color:var(--sub); font-size:12px; }
+  .links{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+  a.l{ display:block; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; text-decoration:none; color:inherit; }
+  a.l:hover{ border-color:var(--accent); }
+  a.l b{ display:block; font-size:15px; } a.l span{ font-size:12px; color:var(--sub); }
+  a.l.off{ opacity:.5; pointer-events:none; }
+  .gate{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-top:16px; }
+  input,button{ font:inherit; padding:8px 12px; border-radius:8px; border:1px solid var(--line); } button{ background:var(--ink); color:#fff; border:0; cursor:pointer; }
+  #main{ display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">どこ高？ 運営</div>
+  <h1>どこ高ポータル</h1>
+  <div class="sub">運営だけが使うページです。ブックマークして使ってください。</div>
+  <div class="gate" id="gate">
+    <input id="pass" type="password" placeholder="運営の合言葉"> <button id="go">開く</button> <span id="msg" class="sub"></span>
+  </div>
+  <div id="main">
+    <h2>アプリ</h2>
+    <div class="links">
+      <a class="l" href="https://at-works-jp.github.io/dokoko/" target="_blank" rel="noopener"><b>どこ高（新しいURL）</b><span>いま配っているURL</span></a>
+      <a class="l" href="https://tsutomu333.github.io/koukou/" target="_blank" rel="noopener"><b>どこ高（古い入口）</b><span>新しいURLに自動で飛びます</span></a>
+      <a class="l" href="https://script.google.com/macros/s/AKfycbwvDe4IB8MTCbk8fFIwR8zSEFPdmAZ8S2rEXPCSkZ0zkuhaToa9XshZN86Qet4Wco77/exec" target="_blank" rel="noopener"><b>どこ高（GAS版）</b><span>Driveに置いた版。古いホーム画面アイコンはこちら</span></a>
+      <a class="l" href="#" data-owner="https://at-works-jp.github.io/dokoko/?o=" target="_blank" rel="noopener"><b>運営専用の入口</b><span>この端末を運営として登録して開きます</span></a>
+    </div>
+    <h2>分析</h2>
+    <div class="links">
+      <a class="l" href="game.html" target="_blank" rel="noopener"><b>ゲームの記録の分析</b><span>遊ばれ方・当たる率・やめた人・シェア・地域・くり返し・あるある・ずれる質問・来た元</span></a>
+      <a class="l" href="../works/stats.html" target="_blank" rel="noopener"><b>作った人ページの分析</b><span>リンクを押した人と、紹介ページの見られ方</span></a>
+    </div>
+    <h2>表向きのページ</h2>
+    <div class="links">
+      <a class="l" href="../works/" target="_blank" rel="noopener"><b>作った人の紹介ページ（草案）</b><span>どこ高の結果画面からつながるページ</span></a>
+    </div>
+    <h2>裏側</h2>
+    <div class="links">
+      <a class="l" href="https://docs.google.com/spreadsheets/d/1U6t44Vtt2lecnPq-NrjJj17_zqDxzwfi8_D0uwhhf10/edit" target="_blank" rel="noopener"><b>記録のスプレッドシート</b><span>結果・答え・やめた・シェア・あるある・作った人ページの記録</span></a>
+      <a class="l" href="https://script.google.com/home/projects/1rc59RYEovhxUr_-ZVIjeC5NIMIOZfcrGUaaeEEZljVJviy6xZSoRvNRR/edit" target="_blank" rel="noopener"><b>GASの編集画面</b><span>記録の受け口。直したらデプロイが必要</span></a>
+      <a class="l" href="https://github.com/at-works-jp/dokoko" target="_blank" rel="noopener"><b>GitHubの置き場所</b><span>アプリ本体とページ。変更の履歴もここ</span></a>
+    </div>
+    <h2>上へ</h2>
+    <div class="links">
+      <a class="l" href="https://at-works-jp.github.io/admin/" target="_blank" rel="noopener"><b>A&amp;T Works のポータル</b><span>全体の運営ページ</span></a>
+    </div>
+  </div>
+</div>
+<script>
+const API='https://script.google.com/macros/s/AKfycbwvDe4IB8MTCbk8fFIwR8zSEFPdmAZ8S2rEXPCSkZ0zkuhaToa9XshZN86Qet4Wco77/exec';
+const $=id=>document.getElementById(id);
+function open_(pass){
+  document.querySelectorAll('[data-owner]').forEach(a=>{ a.href=a.dataset.owner+encodeURIComponent(pass); });
+  $('gate').style.display='none'; $('main').style.display='block'; }
+function check(pass,quiet){ if(!pass) return; $('msg').textContent='確かめています…';
+  fetch(API,{method:'POST',body:JSON.stringify({fn:'adminCheck',args:[{pass}]})}).then(r=>r.json()).then(j=>{
+    if(j&&j.ok&&j.r&&j.r.ok){ try{ localStorage.setItem('koukou-admin',pass); }catch(e){} open_(pass); }
+    else $('msg').textContent=quiet?'':'合言葉がちがいます';
+  }).catch(()=>{ $('msg').textContent='確かめられませんでした'; }); }
+$('go').onclick=()=>check($('pass').value.trim());
+$('pass').addEventListener('keydown',e=>{ if(e.key==='Enter') check($('pass').value.trim()); });
+(function(){ let p=''; try{ p=localStorage.getItem('koukou-admin')||''; }catch(e){} if(p) check(p,true); })();
+</script>
+</body>
+</html>

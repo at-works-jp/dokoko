@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>運営用｜どこ高 ゲームの記録の分析</title>
+<style>
+  :root{ --bg:#f6f3ec; --ink:#1d232b; --sub:#6b6258; --accent:#c83c28; --bar:#2f6f8f; --bar2:#c9a33a; --card:#fff; --line:#e4dccd; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif; font-size:14px; line-height:1.6; }
+  .wrap{ max-width:1040px; margin:0 auto; padding:20px 16px 60px; }
+  h1{ font-size:20px; margin:0 0 4px; } h2{ font-size:15px; margin:0 0 8px; } h3{ font-size:16px; margin:24px 0 6px; border-left:4px solid var(--accent); padding-left:8px; }
+  a{ color:var(--bar); }
+  .sub{ color:var(--sub); font-size:12px; }
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin:12px 0; }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:12px; } .grid .card{ margin:0; }
+  .kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; }
+  .kpi{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px; } .kpi b{ display:block; font-size:22px; } .kpi span{ font-size:12px; color:var(--sub); }
+  .row{ display:grid; grid-template-columns:130px 1fr 110px; gap:8px; align-items:center; margin:3px 0; font-size:13px; }
+  .row .lab{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .track{ background:#eee8dc; border-radius:4px; height:14px; overflow:hidden; } .fill{ background:var(--bar); height:100%; border-radius:4px; } .fill.b{ background:var(--bar2); }
+  .val{ text-align:right; font-variant-numeric:tabular-nums; }
+  table{ border-collapse:collapse; width:100%; font-size:12px; } th,td{ border-bottom:1px solid var(--line); padding:4px 6px; text-align:left; } th{ background:#faf7f0; position:sticky; top:0; }
+  td.n{ text-align:right; font-variant-numeric:tabular-nums; }
+  .scroll{ overflow:auto; max-height:460px; }
+  .bars{ display:flex; align-items:flex-end; gap:2px; height:130px; border-bottom:1px solid var(--line); }
+  .axis{ display:flex; gap:2px; font-size:10px; color:var(--sub); } .axis span{ flex:1; text-align:center; overflow:hidden; white-space:nowrap; }
+  .legend span{ display:inline-block; width:10px; height:10px; border-radius:2px; margin:0 4px 0 10px; vertical-align:middle; }
+  input,button,select{ font:inherit; padding:6px 10px; border-radius:8px; border:1px solid var(--line); } button{ background:var(--ink); color:#fff; border:0; cursor:pointer; }
+  .note{ background:#fff7e0; border:1px solid #efd9a0; border-radius:10px; padding:8px 12px; font-size:13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="sub"><a href="./">← どこ高ポータル</a></div>
+  <h1>どこ高 ゲームの記録の分析</h1>
+  <div class="sub">記録はスプレッドシート（結果ログ・回答ログ・途中でやめた・シェア記録・あるある）から読んでいます。運営だけが見られるページです。</div>
+  <div class="card">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <input id="pass" type="password" placeholder="運営の合言葉">
+      <button id="go">読みこむ</button>
+      <label class="sub"><input type="checkbox" id="exOwn" checked> 運営の端末の記録を除く</label>
+      <select id="range"><option value="0">全期間</option><option value="1">今日</option><option value="7">直近7日</option><option value="30">直近30日</option></select>
+      <span id="msg" class="sub"></span>
+    </div>
+  </div>
+  <div id="out"></div>
+</div>
+<script src="../koukou_data.js"></script>
+<script>
+const API='https://script.google.com/macros/s/AKfycbwvDe4IB8MTCbk8fFIwR8zSEFPdmAZ8S2rEXPCSkZ0zkuhaToa9XshZN86Qet4Wco77/exec';
+const REG={"gifu": "岐阜県", "kobe": "兵庫県", "gifupref": "岐阜県", "osaka": "大阪府", "kumamoto": "熊本県", "fukuoka": "福岡県", "kumamotopref": "熊本県", "oita": "大分県", "osakapref": "大阪府", "aichi": "愛知県", "hyogopref": "兵庫県", "mie": "三重県", "toyama": "富山県", "ishikawa": "石川県", "fukui": "福井県", "shiga": "滋賀県", "kyoto": "京都府", "nara": "奈良県", "wakayama": "和歌山県", "tottori": "鳥取県", "shimane": "島根県", "okayama": "岡山県", "hiroshima": "広島県", "yamaguchi": "山口県", "kagawa": "香川県", "tokushima": "徳島県", "ehime": "愛媛県", "kochi": "高知県", "saga": "佐賀県", "nagasaki": "長崎県", "miyazaki": "宮崎県", "kagoshima": "鹿児島県", "okinawa": "沖縄県", "shizuoka": "静岡県", "nagano": "長野県", "niigata": "新潟県", "yamanashi": "山梨県", "kanagawa": "神奈川県", "tokyo": "東京都", "saitama": "埼玉県", "chiba": "千葉県", "ibaraki": "茨城県", "tochigi": "栃木県", "gunma": "群馬県", "miyagi": "宮城県", "fukushima": "福島県", "yamagata": "山形県", "iwate": "岩手県", "akita": "秋田県", "aomori": "青森県", "hokkaido": "北海道"};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const G=window.GAME_DATA||{schools:{},questions:[],sids:[]};
+const QBY={}; (G.questions||[]).forEach(q=>QBY[q.id]=q);
+const SIDX={}; (G.sids||[]).forEach((s,i)=>SIDX[s]=i);
+// 学校ごとの「はい」の見こみ（データ側）。候補の重みで平均する
+const CH='0123456789abcdefghijklmnopqrstuvwxyz', lv=ch=>0.02+CH.indexOf(ch)/35*0.96;
+let CAND=null; function cands(){ if(CAND) return CAND; CAND=(G.cs||[]).map(([si,di,w],i)=>({si,di,w:w/1e6,pv:+(G.pv||'')[i]})); return CAND; }
+const QP={}; function schoolP(qid,sid){ const q=QBY[qid]; if(!q) return null; const si=SIDX[sid]; if(si===undefined) return null;
+  if(!QP[qid]){ let b=q.b, bd=q.bd; if(b&&b.indexOf('{')>=0) b=b.replace(/\{(.)(\d+)\}/g,(m,c,k)=>c.repeat(+k)); if(bd&&bd.indexOf('{')>=0) bd=bd.replace(/\{(.)(\d+)\}/g,(m,c,k)=>c.repeat(+k));
+    const ov={}; if(q.o){ let idx=0; for(const part of q.o.split(',')){ idx+=parseInt(part.slice(0,-1),16); ov[idx]=lv(part.slice(-1)); } }
+    const C=cands(), acc={}; C.forEach((c,i)=>{ let p=ov[i]!==undefined?ov[i]:(b?lv(b[c.si]):lv(bd[c.di*2+c.pv])); const a=acc[c.si]||(acc[c.si]=[0,0]); a[0]+=p*c.w; a[1]+=c.w; });
+    QP[qid]=acc; }
+  const a=QP[qid][si]; return a&&a[1]?a[0]/a[1]:null; }
+const decQ=s=>String(s).replace(/-([0-9a-z]+)/g,(m,x)=>String.fromCodePoint(parseInt(x,36)));
+const prefOf=sid=>{ const s=G.schools[sid]; return s?(REG[s.region]||s.region||'不明'):'不明'; };
+let RAW=null;
+(function(){ const q=new URLSearchParams(location.search).get('o'); let p=q||''; if(!p){ try{ p=localStorage.getItem('koukou-admin')||''; }catch(e){} } $('pass').value=p; if(p) load(); })();
+$('go').onclick=load; $('exOwn').onchange=()=>RAW&&render(); $('range').onchange=()=>RAW&&render();
+function load(){ const pass=$('pass').value.trim(); if(!pass){ $('msg').textContent='合言葉を入れてください'; return; } $('msg').textContent='読みこみ中…（少し時間がかかります）';
+  fetch(API,{method:'POST',body:JSON.stringify({fn:'getGameStats',args:[{pass}]})}).then(r=>r.json()).then(j=>{
+    if(!j||!j.ok||!j.r||!j.r.ok){ $('msg').textContent=(j&&j.r&&j.r.msg)||'読みこめませんでした'; return; }
+    try{ localStorage.setItem('koukou-admin',pass); }catch(e){} RAW=j.r; $('msg').textContent='読みこみました（'+new Date().toLocaleString('ja-JP')+'）'; render();
+  }).catch(e=>$('msg').textContent='読みこめませんでした：'+e); }
+const pct=(a,b)=>b?Math.round(1000*a/b)/10+'%':'—';
+const kpi=(v,l)=>`<div class="kpi"><b>${esc(v)}</b><span>${esc(l)}</span></div>`;
+function hbars(title,entries,opt){ opt=opt||{}; const max=Math.max(1,...entries.map(e=>e[1]));
+  const rows=entries.map(e=>`<div class="row"><div class="lab" title="${esc(e[0])}">${esc(e[0])}</div><div class="track"><div class="fill ${opt.b?'b':''}" style="width:${100*e[1]/max}%"></div></div><div class="val">${esc(e[2]!=null?e[2]:e[1])}</div></div>`).join('');
+  return `<div class="card"><h2>${esc(title)}</h2>${opt.note?`<div class="sub" style="margin-bottom:6px">${esc(opt.note)}</div>`:''}${rows||'<div class="sub">記録がありません</div>'}</div>`; }
+function vbars(title,keys,series,legend,note){ const max=Math.max(1,...series.flatMap(s=>s.v));
+  const bars=keys.map((k,i)=>`<div style="flex:1;display:flex;gap:1px;align-items:flex-end;height:100%">${series.map(s=>`<div title="${esc(k)}：${s.v[i]}" style="flex:1;min-height:1px;height:${100*s.v[i]/max}%;background:${s.c}"></div>`).join('')}</div>`).join('');
+  const step=Math.ceil(keys.length/14); const ax=keys.map((k,i)=>`<span>${i%step===0?esc(k):''}</span>`).join('');
+  return `<div class="card"><h2>${esc(title)}</h2>${legend?`<div class="sub legend">${legend}</div>`:''}${note?`<div class="sub">${esc(note)}</div>`:''}<div class="bars">${bars}</div><div class="axis">${ax}</div></div>`; }
+function table(title,head,rows,note){ return `<div class="card"><h2>${esc(title)}</h2>${note?`<div class="sub" style="margin-bottom:6px">${esc(note)}</div>`:''}<div class="scroll"><table><tr>${head.map(h=>`<th>${esc(h)}</th>`).join('')}</tr>${rows.map(r=>`<tr>${r.map(c=>typeof c==='number'?`<td class="n">${c}</td>`:`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</table></div></div>`; }
+const cnt=(arr,key)=>{ const m=new Map(); arr.forEach(x=>{ const k=key(x); m.set(k,(m.get(k)||0)+1); }); return m; };
+const day=t=>String(t).slice(0,10), md=t=>String(t).slice(5,10), hour=t=>+String(t).slice(11,13);
+function render(){
+  const own=new Set(RAW.owners||[]), ex=$('exOwn').checked, days=+$('range').value;
+  let since=null; if(days){ since=new Date(Date.now()-(days-1)*864e5); since.setHours(0,0,0,0); }
+  const ok=(t,c)=>(!since||new Date(t)>=since)&&!(ex&&own.has(c));
+  const R=RAW.results.map(r=>({t:r[0],sid:r[1],q:+r[2],gs:+r[3],win:+r[4],c:r[5],grad:r[6],ref:r[7]})).filter(o=>ok(o.t,o.c));
+  const A=RAW.answers.map(r=>({t:r[0],sid:r[1],win:+r[2],c:r[3],ans:String(r[4]||'')})).filter(o=>ok(o.t,o.c));
+  const Q=RAW.quits.map(r=>({t:r[0],why:r[1],q:+r[2],gs:+r[3],c:r[4],ref:r[5]})).filter(o=>ok(o.t,o.c));
+  const S=RAW.shares.map(r=>({t:r[0],k:r[1],c:r[2],win:+r[3],q:+r[4]})).filter(o=>ok(o.t,o.c));
+  const P=RAW.posts.map(r=>({t:r[0],sid:r[1],text:r[2],grad:r[3],c:r[4]})).filter(o=>ok(o.t,o.c));
+  const win=R.filter(o=>o.win), w1=win.filter(o=>o.gs===1);
+  const devs=new Set(R.map(o=>o.c));
+  let h=`<div class="kpis" style="margin-top:12px">${[kpi(R.length,'遊ばれた回数'),kpi(devs.size,'遊んだ端末'),kpi(new Set(R.map(o=>o.sid)).size,'遊ばれた学校'),kpi(new Set(win.map(o=>o.sid)).size,'当たった学校'),
+    kpi(pct(win.length,R.length),'当たる率（3回まで）'),kpi(pct(w1.length,R.length),'1回目で当たる率'),kpi(R.length?(R.reduce((a,o)=>a+o.q,0)/R.length).toFixed(1)+'問':'—','平均の質問数'),
+    kpi(Q.length,'途中でやめた'),kpi(S.length,'シェア'),kpi(P.length,'あるある投稿')].join('')}</div>`;
+  // 1 遊ばれ方
+  h+='<h3>1. 遊ばれ方</h3>';
+  const ds=[...new Set(R.map(o=>day(o.t)))].sort();
+  h+=vbars('日ごとの回数と端末',ds.map(md),[{v:ds.map(d=>R.filter(o=>day(o.t)===d).length),c:'var(--bar)'},{v:ds.map(d=>new Set(R.filter(o=>day(o.t)===d).map(o=>o.c)).size),c:'var(--bar2)'}],'<span style="background:var(--bar)"></span>回数 <span style="background:var(--bar2)"></span>端末');
+  h+=table('日ごとの数字',['日','回数','端末','当たる率','1回目','平均質問','やめた','シェア','あるある'],ds.slice().reverse().map(d=>{ const r=R.filter(o=>day(o.t)===d); return [d,r.length,new Set(r.map(o=>o.c)).size,pct(r.filter(o=>o.win).length,r.length),pct(r.filter(o=>o.win&&o.gs===1).length,r.length),r.length?(r.reduce((a,o)=>a+o.q,0)/r.length).toFixed(1):'—',Q.filter(o=>day(o.t)===d).length,S.filter(o=>day(o.t)===d).length,P.filter(o=>day(o.t)===d).length]; }));
+  const hrs=[...Array(24).keys()];
+  h+=vbars('時間帯（遊ばれた回数）',hrs.map(x=>x+'時'),[{v:hrs.map(x=>R.filter(o=>hour(o.t)===x).length),c:'var(--bar)'}]);
+  // 2 当たる率
+  h+='<h3>2. 当たる率</h3><div class="grid">';
+  h+=vbars('日ごとの当たる率（%）',ds.map(md),[{v:ds.map(d=>{ const r=R.filter(o=>day(o.t)===d); return r.length?Math.round(100*r.filter(o=>o.win).length/r.length):0; }),c:'var(--bar)'},{v:ds.map(d=>{ const r=R.filter(o=>day(o.t)===d); return r.length?Math.round(100*r.filter(o=>o.win&&o.gs===1).length/r.length):0; }),c:'var(--bar2)'}],'<span style="background:var(--bar)"></span>3回まで <span style="background:var(--bar2)"></span>1回目');
+  h+=hbars('何回目の予想で決まったか',[['1回目で当たり',w1.length],['2回目で当たり',win.filter(o=>o.gs===2).length],['3回目で当たり',win.filter(o=>o.gs===3).length],['当たらなかった',R.length-win.length]].map(e=>[e[0],e[1],`${e[1]}（${pct(e[1],R.length)}）`]));
+  const qb=v=>v<15?'〜14問':v<20?'15〜19問':v<25?'20〜24問':v<30?'25〜29問':v<40?'30〜39問':'40問〜';
+  h+=hbars('当たるまでの質問数',['〜14問','15〜19問','20〜24問','25〜29問','30〜39問','40問〜'].map(k=>[k,win.filter(o=>qb(o.q)===k).length]));
+  h+='</div>';
+  // 3 途中でやめた
+  h+='<h3>3. 途中でやめた人</h3><div class="grid">';
+  const qs=[['予想が出る前',o=>o.gs===0],['1回目が外れたあと',o=>o.gs===1],['2回目が外れたあと',o=>o.gs===2],['3回とも外れたあと',o=>o.gs>=3]];
+  h+=hbars('やめたところ',qs.map(([l,f])=>{ const n=Q.filter(f).length; return [l,n,`${n}（${pct(n,Q.length)}）`]; }),{b:1});
+  const q0=Q.filter(o=>o.gs===0); const qq=v=>v<5?'0〜4問':v<10?'5〜9問':v<15?'10〜14問':v<20?'15〜19問':'20問〜';
+  h+=hbars('予想が出る前にやめた人の質問数',['0〜4問','5〜9問','10〜14問','15〜19問','20問〜'].map(k=>[k,q0.filter(o=>qq(o.q)===k).length]),{b:1});
+  h+=hbars('やめた理由（記録）',[...cnt(Q,o=>o.why||'不明').entries()].sort((a,b)=>b[1]-a[1]),{b:1});
+  h+=hbars('遊んだ回数に対するやめた割合',[['やめた',Q.length,pct(Q.length,Q.length+R.length)],['最後まで遊んだ',R.length,pct(R.length,Q.length+R.length)]],{b:1});
+  h+='</div>';
+  // 4 シェア
+  h+='<h3>4. シェア</h3><div class="grid">';
+  const KN={img:'画像',copyBtn:'コピー',lineBtn:'LINE',xBtn:'X'};
+  h+=hbars('ボタン別',[...cnt(S,o=>KN[o.k]||o.k).entries()].sort((a,b)=>b[1]-a[1]));
+  h+=hbars('当たり外れ別（シェアした率）',[['当たった',S.filter(o=>o.win).length,`${S.filter(o=>o.win).length}（${pct(S.filter(o=>o.win).length,win.length)}）`],['外れた',S.filter(o=>!o.win).length,`${S.filter(o=>!o.win).length}（${pct(S.filter(o=>!o.win).length,R.length-win.length)}）`]],{note:'かっこ内は、その結果になった回数のうちシェアした割合'});
+  h+='</div>';
+  // 5 地域
+  h+='<h3>5. 地域</h3>';
+  const pm=new Map(); R.forEach(o=>{ const p=prefOf(o.sid); const a=pm.get(p)||{n:0,w:0,w1:0,s:new Set()}; a.n++; if(o.win) a.w++; if(o.win&&o.gs===1) a.w1++; a.s.add(o.sid); pm.set(p,a); });
+  const pr=[...pm.entries()].sort((a,b)=>b[1].n-a[1].n);
+  h+=table('都道府県ごと',['都道府県','回数','学校数','当たる率','1回目'],pr.map(([p,a])=>[p,a.n,a.s.size,pct(a.w,a.n),pct(a.w1,a.n)]),'当たる率は、遊ばれた回数が少ない県ほどぶれます');
+  // 6 卒業年
+  h+='<h3>6. 卒業年</h3><div class="grid">';
+  const gr=R.filter(o=>o.grad); h+=hbars('卒業年を入れた人',[['入れた',gr.length,`${gr.length}（${pct(gr.length,R.length)}）`],['入れていない',R.length-gr.length]]);
+  h+=hbars('入れた人の年代',[...cnt(gr,o=>String(o.grad).slice(0,3)+'0年代').entries()].sort());
+  h+='</div>';
+  // 7 くり返し
+  h+='<h3>7. くり返し遊ぶ人</h3><div class="grid">';
+  const bd=new Map(); R.forEach(o=>{ const a=bd.get(o.c)||[]; a.push(o); bd.set(o.c,a); });
+  const per=[...bd.values()];
+  const pb=n=>n===1?'1回':n===2?'2回':n<=4?'3〜4回':n<=9?'5〜9回':'10回〜';
+  h+=hbars('1台で遊んだ回数',['1回','2回','3〜4回','5〜9回','10回〜'].map(k=>[k,per.filter(a=>pb(a.length)===k).length]));
+  const rep=per.filter(a=>a.length>=2);
+  h+=hbars('2回以上遊んだ端末の中身',[['同じ学校だけ',rep.filter(a=>new Set(a.map(o=>o.sid)).size===1).length],['ちがう学校も',rep.filter(a=>new Set(a.map(o=>o.sid)).size>1).length],['別の日にも来た',rep.filter(a=>new Set(a.map(o=>day(o.t))).size>1).length]]);
+  h+='</div>';
+  // 8 あるある
+  h+='<h3>8. あるある</h3><div class="grid">';
+  const pd=[...new Set(P.map(o=>day(o.t)))].sort();
+  h+=vbars('日ごとの投稿',pd.map(md),[{v:pd.map(d=>P.filter(o=>day(o.t)===d).length),c:'var(--bar2)'}]);
+  const AR=RAW.aru||[]; const yes=AR.reduce((a,r)=>a+(+r[2]||0),0), no=AR.reduce((a,r)=>a+(+r[3]||0),0);
+  h+=hbars('あるあるの確かめ（全期間）',[['ある',Math.round(yes)],['ない',Math.round(no)]],{b:1});
+  h+=hbars('数（全期間）',[['あるあるの種類',AR.length],['あるあるがある学校',new Set(AR.map(r=>r[0])).size],['投稿した端末',new Set(P.map(o=>o.c)).size],['非表示',AR.filter(r=>r[5]).length]],{b:1});
+  h+='</div>';
+  h+=table('新しい投稿（50件まで）',['日時','都道府県','あるある','卒業年'],P.slice().sort((a,b)=>String(b.t).localeCompare(String(a.t))).slice(0,50).map(o=>[String(o.t).replace('T',' ').slice(5,16),prefOf(o.sid),o.text,o.grad||'']),'学校名は出していません');
+  // 9 質問ごとのずれ
+  h+='<h3>9. 答えがよくずれる質問</h3>';
+  const qm=new Map(); A.filter(o=>o.win).forEach(o=>{ o.ans.split(',').forEach(x=>{ const k=x.lastIndexOf(':'); if(k<0) return; const id=decQ(x.slice(0,k)), a=x.slice(k+1);
+    if(!/^(yes|pyes|no|pno)$/.test(a)) return; const p=schoolP(id,o.sid); if(p===null) return;
+    const s=qm.get(id)||{n:0,m:0,yy:0}; s.n++; const y=a==='yes'||a==='pyes'; if(y) s.yy++; if((p>=0.5)!==y) s.m++; qm.set(id,s); }); });
+  const qr=[...qm.entries()].filter(([id,s])=>s.n>=15).sort((a,b)=>b[1].m/b[1].n-a[1].m/a[1].n);
+  h+=table('質問ごと（当たった人の答えとデータのずれ。15回以上聞いたもの）',['質問','ずれ','聞いた回数','「はい」の割合','ID'],qr.slice(0,60).map(([id,s])=>[(QBY[id]||{}).text||id,pct(s.m,s.n),s.n,pct(s.yy,s.n),id]),'ずれ＝データでは「はい」寄りなのに「いいえ」と答えた、またはその逆。当たった人の答えだけで数えています');
+  // 10 来た元
+  h+='<h3>10. 来た元</h3><div class="grid">';
+  h+=hbars('どこから来て遊んだか',[...cnt(R.filter(o=>o.ref),o=>o.ref).entries()].sort((a,b)=>b[1]-a[1]).slice(0,15),{note:'11/4の昼から記録しています'});
+  h+=hbars('途中でやめた人の来た元',[...cnt(Q.filter(o=>o.ref),o=>o.ref).entries()].sort((a,b)=>b[1]-a[1]).slice(0,15),{b:1});
+  h+='</div>';
+  $('out').innerHTML=h;
+}
+</script>
+</body>
+</html>
