@@ -874,6 +874,8 @@ function gasRun_(ok,ng){ return new Proxy({},{get(_,k){ if(k==='withSuccessHandl
   return (...a)=>{ fetch(GAS_API,{method:'POST',keepalive:true,body:JSON.stringify({fn:k,args:a})}).then(r=>r.json()).then(j=>{ if(j&&j.ok){ if(ok) ok(j.r); } else if(ng) ng(j&&j.e); }).catch(e=>{ if(ng) ng(e); }); }; }}); }
 const GAS = (typeof google!=='undefined' && google.script && google.script.run) ? google.script.run : (/^https?:/.test(location.protocol) ? gasRun_(null,null) : null);
 if(GAS){ const n=document.getElementById('privNote'); if(n) n.textContent='遊んだ結果（当てた学校・質問数・1問ごとの答え・卒業年）をAIを育てるためとランキングのために送ります。名前やメールなどの個人情報は集めません。'; }
+// 来た元（どのサイトから開いたか）。ドメインだけ記録する。旧URLからの転送は ?ref= で受け取る
+const REF=(()=>{ try{ const q=new URLSearchParams(location.search).get('ref'); let r=(q!==null)?q:(document.referrer||''); if(!r) return '(なし)'; try{ r=new URL(r).hostname||r; }catch(e){} if(r===location.hostname) return '(なし)'; return String(r).slice(0,60); }catch(e){ return ''; } })();
 function clientId(){ try{ let c=localStorage.getItem('koukou-client'); if(!c){ c=Math.random().toString(36).slice(2,12); localStorage.setItem('koukou-client',c);} return c; }catch(e){ return ''; } }
 // 運営専用の入口：URLに ?o=合言葉 がついていたら、開くたびにこの端末を「運営の端末」に登録する（ランキング・段階の数から外す）
 (function(){ try{ const o=new URLSearchParams(location.search).get('o'); if(o && GAS) GAS.withFailureHandler(()=>{}).adminOwner({pass:o,client:clientId()}); }catch(e){} })();
@@ -882,7 +884,7 @@ try{ if(GAS) GAS.withSuccessHandler(m=>{ if(m) ARU_ALL=m; }).withFailureHandler(
 function report(sid,school,questions,guesses,win){
   if(!GAS) return;
   GAS.withSuccessHandler(r=>{ if(r&&r.ok&&win){ $('endPts').textContent = r.capped ? '今日の加点上限に達しました（遊ぶのは何回でもOK）' : `${school.replace(/（.*/,'')}に ${r.points} ポイント！`; } })
-     .withFailureHandler(()=>{}).recordResult({sid,school,questions,guesses,win,answers:qlog.join(','),client:clientId(),grad:(()=>{try{return localStorage.getItem('koukou-grad')||''}catch(e){return ''}})()});
+     .withFailureHandler(()=>{}).recordResult({sid,school,questions,guesses,win,answers:qlog.join(','),client:clientId(),ref:REF,grad:(()=>{try{return localStorage.getItem('koukou-grad')||''}catch(e){return ''}})()});
 }
 let rankPref=null;
 function showRank(){
@@ -1069,7 +1071,7 @@ function quitFlush(reason){
   let p=null; try{ p=JSON.parse(localStorage.getItem('koukou-pending')||'null'); }catch(e){}
   if(!p||p.sent||!p.n){ return; }
   p.sent=true; try{ localStorage.setItem('koukou-pending',JSON.stringify(p)); }catch(e){}
-  if(GAS) GAS.withSuccessHandler(()=>{ try{ const q=JSON.parse(localStorage.getItem('koukou-pending')||'null'); if(q&&q.sent) localStorage.removeItem('koukou-pending'); }catch(e){} }).withFailureHandler(()=>{}).recordQuit({reason,n:p.n,guesses:p.guesses,top:p.top,answers:p.answers,client:clientId()});
+  if(GAS) GAS.withSuccessHandler(()=>{ try{ const q=JSON.parse(localStorage.getItem('koukou-pending')||'null'); if(q&&q.sent) localStorage.removeItem('koukou-pending'); }catch(e){} }).withFailureHandler(()=>{}).recordQuit({reason,ref:REF,n:p.n,guesses:p.guesses,top:p.top,answers:p.answers,client:clientId()});
 }
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden' && gameOpen){ quitSave(); quitFlush('とちゅうで画面をとじた'); } });
 setTimeout(()=>quitFlush('前回の途中'),3000);
