@@ -875,6 +875,8 @@ function gasRun_(ok,ng){ return new Proxy({},{get(_,k){ if(k==='withSuccessHandl
 const GAS = (typeof google!=='undefined' && google.script && google.script.run) ? google.script.run : (/^https?:/.test(location.protocol) ? gasRun_(null,null) : null);
 if(GAS){ const n=document.getElementById('privNote'); if(n) n.textContent='遊んだ結果（当てた学校・質問数・1問ごとの答え・卒業年）をAIを育てるためとランキングのために送ります。名前やメールなどの個人情報は集めません。'; }
 function clientId(){ try{ let c=localStorage.getItem('koukou-client'); if(!c){ c=Math.random().toString(36).slice(2,12); localStorage.setItem('koukou-client',c);} return c; }catch(e){ return ''; } }
+// 運営専用の入口：URLに ?o=合言葉 がついていたら、開くたびにこの端末を「運営の端末」に登録する（ランキング・段階の数から外す）
+(function(){ try{ const o=new URLSearchParams(location.search).get('o'); if(o && GAS) GAS.withFailureHandler(()=>{}).adminOwner({pass:o,client:clientId()}); }catch(e){} })();
 try{ if(GAS) GAS.withSuccessHandler(m=>{ if(m) ARU_TOP=m; }).withFailureHandler(()=>{}).getAruTop(); }catch(e){}
 try{ if(GAS) GAS.withSuccessHandler(m=>{ if(m) ARU_ALL=m; }).withFailureHandler(()=>{}).getAruAll(); }catch(e){}
 function report(sid,school,questions,guesses,win){
