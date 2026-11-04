@@ -173,6 +173,7 @@
   <!-- 質問 -->
   <section class="card hidden" id="s-q">
     <div class="qno" id="qno">QUESTION 1</div>
+    <div id="missMsg" class="hidden" style="background:#f6e7a8;color:#3a2a1a;border-radius:10px;padding:10px 12px;margin:8px 0;font-weight:700;font-size:14px;line-height:1.6">ちがいましたか…<br>お願いです<br>もうちょっとだけ質問させてください</div>
     <div style="color:#f6e7a8;font-size:14px;margin-bottom:6px">※ 高校生のころのことで答えてください</div>
     <div class="qtext" id="qtext"></div>
     <div class="btns">
@@ -300,7 +301,7 @@
   </section>
 </div>
 
-<script src="koukou_data.js?v=22a5eca966"></script>
+<script src="koukou_data.js?v=2ed148549f"></script>
 <script>// 出身高校当てエンジン（ブラウザとNode共通）
 (function (root) {
   const EPS = 0.08;
@@ -623,7 +624,7 @@ const FLIP={yes:'no',no:'yes',pyes:'pno',pno:'pyes',unk:'unk'};
 function yesShare(qi){ const q=D.questions[qi], p=q.p; let s=0; for(let i=0;i<p.length;i++) s+=g.post[i]*p[i]; return s; }
 function qWord(qi){ const q=D.questions[qi]; if(q.alt && yesShare(qi)<0.5) return {text:q.alt, flip:true}; return {text:q.text, flip:false}; }
 let curFlip=false;
-function showQ(qi,prefix){ const w=qWord(qi); curFlip=w.flip; $('qno').textContent=(prefix||'')+'QUESTION '+(g.n+1); $('qtext').textContent=w.text; $('counter').textContent=`質問 ${g.n+1}`; show('s-q'); }
+function showQ(qi,prefix){ $('missMsg').classList.add('hidden'); const w=qWord(qi); curFlip=w.flip; $('qno').textContent=(prefix||'')+'QUESTION '+(g.n+1); $('qtext').textContent=w.text; $('counter').textContent=`質問 ${g.n+1}`; show('s-q'); }
 // 記録用の質問ID：英数字・_以外は「-」＋文字コード(36進)にする（例 堺市→-5ns-5ga）。サーバーで日本語が消されないように
 function qidSafe(id){ return String(id).replace(/[^A-Za-z0-9_]/g,c=>'-'+c.codePointAt(0).toString(36)); }
 function answerQ(a){ log.push(`Q${g.n+1}. ${$('qtext').textContent} → ${LABEL[a]}`); const ak=curFlip?FLIP[a]:a; try{ qlog.push(qidSafe(D.questions[curQ].id)+':'+ak); }catch(e){} E.answer(D,g,curQ,ak); updateMap(false); quitSave(); }
@@ -659,8 +660,8 @@ $('wrongBtn').onclick=()=>{
   g.n=Math.max(g.n,0); // 続けて質問
   updateMap(false); g.forceMore=true;
   // 追加で数問聞いてから次の予想
-  const extra=g.n+4; const loop=()=>{ if(g.n>=extra || E.nextQuestion(D,g)===null) return guess(); curQ=E.nextQuestion(D,g);
-    showQ(curQ,'もう少しだけ… ');
+  const extra=g.n+4; const n0=g.n; const loop=()=>{ if(g.n>=extra || E.nextQuestion(D,g)===null) return guess(); curQ=E.nextQuestion(D,g);
+    showQ(curQ,'もう少しだけ… '); if(g.n===n0) $('missMsg').classList.remove('hidden');
     document.querySelectorAll('#s-q [data-a]').forEach(b=>b.onclick=()=>{ const a=b.dataset.a; answerQ(a); loop(); });
   }; loop();
 };
