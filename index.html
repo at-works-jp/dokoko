@@ -298,6 +298,7 @@
       <button class="soft" id="bokouBtn" style="display:none">ぼこうへ</button>
     </div>
     <div class="hist" id="hist"></div>
+    <div style="text-align:center;margin:18px 0 6px"><a id="makerLink" href="https://at-works-jp.github.io/dokoko/works/" target="_blank" rel="noopener" style="font-size:13px;color:var(--ink);opacity:.75">このアプリを作った人 →</a></div>
   </section>
 </div>
 
@@ -688,6 +689,7 @@ function pick(reg){
   show('s-pick');
 }
 function end(win,t){
+  GST={endAt:Date.now(),sid:t.sid,school:t.school,decade:t.decade||'',win:!!win,n:g.n,guesses,shares:[],post:'',cfm:0}; try{ localStorage.setItem('koukou-plays',String((+localStorage.getItem('koukou-plays')||0)+1)); }catch(e){}
   gameOpen=false; try{ localStorage.removeItem('koukou-pending'); localStorage.setItem('koukou-lastq', JSON.stringify(g.asked.map(i=>(D.questions[i]||{}).id).filter(x=>x&&!/^GEO_/.test(x)))); }catch(e){}
   const pts = win ? Math.max(0,30-g.n) * (guesses>1?0.5:1) : 0;
   $('endSub').textContent = win ? `${g.n}問で当てられました` : '当てられませんでした';
@@ -736,7 +738,7 @@ function cfmLoad(sid){
       const t=document.createElement('div'); t.style.fontWeight='700'; t.style.margin='4px 0 6px'; t.textContent='『'+it.text+'』'; d.appendChild(t);
       const bx=document.createElement('div'); bx.style.display='flex'; bx.style.gap='6px';
       [['ある','yes'],['ない','no'],['わからない','']].forEach(([lb,v])=>{ const b=document.createElement('button'); b.className='soft'; b.style.flex='1'; b.textContent=lb;
-        b.onclick=()=>{ bx.innerHTML='<span class="small">ありがとう！</span>'; if(v) GAS.withFailureHandler(()=>{}).confirmAru({sid,row:it.row,text:it.text,ans:v,client:clientId()}); };
+        b.onclick=()=>{ if(v&&GST) GST.cfm++; bx.innerHTML='<span class="small">ありがとう！</span>'; if(v) GAS.withFailureHandler(()=>{}).confirmAru({sid,row:it.row,text:it.text,ans:v,client:clientId()}); };
         bx.appendChild(b); });
       d.appendChild(bx); L.appendChild(d); });
     $('cfmBox').style.display='';
@@ -749,13 +751,13 @@ $('postBtn').onclick=()=>{
   if(text.length<3){ $('postMsg').textContent='3文字以上で書いてください'; return; }
   if(!GAS){ $('postMsg').textContent='（いまは送れません）'; return; }
   $('postBtn').disabled=true; $('postMsg').textContent='送っています…';
-  GAS.withSuccessHandler(r=>{ $('postMsg').textContent = r&&r.ok ? 'ありがとう！ 届きました' : (r&&r.msg)||'送れませんでした'; if(!(r&&r.ok)) $('postBtn').disabled=false; })
+  GAS.withSuccessHandler(r=>{ if(r&&r.ok&&GST) GST.post=text; $('postMsg').textContent = r&&r.ok ? 'ありがとう！ 届きました' : (r&&r.msg)||'送れませんでした'; if(!(r&&r.ok)) $('postBtn').disabled=false; })
      .withFailureHandler(()=>{ $('postMsg').textContent='送れませんでした'; $('postBtn').disabled=false; })
      .postAruaru({sid:postSid,school:D.schools[postSid].name,text,grad,client:clientId()});
 };
 // ---- 結果を画像でシェア（校名は出さない） ----
 let LAST=null;
-function logShare(kind){ try{ if(GAS) GAS.withFailureHandler(()=>{}).logShare({kind,client:clientId(),win:LAST&&LAST.win,n:LAST&&LAST.n}); }catch(e){} }
+function logShare(kind){ try{ if(GST) GST.shares.push(kind); }catch(e){} try{ if(GAS) GAS.withFailureHandler(()=>{}).logShare({kind,client:clientId(),win:LAST&&LAST.win,n:LAST&&LAST.n}); }catch(e){} }
 ['lineBtn','xBtn'].forEach(id=>{ const b=document.getElementById(id); if(b) b.addEventListener('click',()=>logShare(id)); });
 function devWord(dv){ return dv>=70?'母校の見本':dv>=60?'誰が見ても母校の生徒':dv>=40?'よくいる母校の生徒':dv>=30?'母校の中ではレアキャラ':'本当に母校の生徒？'; }
 function makeImage(r){
@@ -877,6 +879,20 @@ const GAS = (typeof google!=='undefined' && google.script && google.script.run) 
 if(GAS){ const n=document.getElementById('privNote'); if(n) n.textContent='遊んだ結果（当てた学校・質問数・1問ごとの答え・卒業年）をAIを育てるためとランキングのために送ります。名前やメールなどの個人情報は集めません。'; }
 // 来た元（どのサイトから開いたか）。ドメインだけ記録する。旧URLからの転送は ?ref= で受け取る
 const REF=(()=>{ try{ const q=new URLSearchParams(location.search).get('ref'); let r=(q!==null)?q:(document.referrer||''); if(!r) return '(なし)'; try{ r=new URL(r).hostname||r; }catch(e){} if(r===location.hostname) return '(なし)'; return String(r).slice(0,60); }catch(e){ return ''; } })();
+const REFURL=(()=>{ try{ const q=new URLSearchParams(location.search).get('ref'); return String(q!==null?q:(document.referrer||'')).slice(0,300); }catch(e){ return ''; } })();
+let GST=null;
+function devInfo(){ const ua=navigator.userAgent||''; let os='その他'; if(/iPhone|iPod/.test(ua)) os='iPhone'; else if(/iPad/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1)) os='iPad'; else if(/Android/.test(ua)) os='Android'; else if(/Windows/.test(ua)) os='Windows'; else if(/Macintosh/.test(ua)) os='Mac';
+  let inapp=''; if(/Line\//i.test(ua)) inapp='LINE'; else if(/Instagram/i.test(ua)) inapp='Instagram'; else if(/FBAN|FBAV/.test(ua)) inapp='Facebook'; else if(/musical_ly|TikTok|BytedanceWebview/i.test(ua)) inapp='TikTok'; else if(/Twitter/i.test(ua)) inapp='X';
+  let tz=''; try{ tz=Intl.DateTimeFormat().resolvedOptions().timeZone||''; }catch(e){}
+  return {os,inapp,mobile:/Mobi|iPhone|Android/.test(ua)?1:0,screen:(screen.width||0)+'x'+(screen.height||0),view:innerWidth+'x'+innerHeight,dpr:devicePixelRatio||1,lang:navigator.language||'',tz,tzo:-new Date().getTimezoneOffset()}; }
+(function(){ const a=document.getElementById('makerLink'); if(!a) return; a.addEventListener('click',()=>{
+  const vid=Math.random().toString(36).slice(2,12); let prev=0; try{ prev=+localStorage.getItem('koukou-maker')||0; localStorage.setItem('koukou-maker',String(prev+1)); }catch(e){}
+  let plays=0, grad=''; try{ plays=+localStorage.getItem('koukou-plays')||0; grad=localStorage.getItem('koukou-grad')||''; }catch(e){}
+  a.href='https://at-works-jp.github.io/dokoko/works/?from=dokoko&vid='+vid+'&cid='+encodeURIComponent(clientId());
+  const s=GST||{}; const reg=((D.schools[s.sid]||{}).region)||'';
+  try{ if(GAS) GAS.withFailureHandler(()=>{}).logMaker(Object.assign({ev:'click',vid,client:clientId(),from:'dokoko',sid:s.sid||'',school:s.school||'',pref:reg?prefLabel(reg):'',decade:s.decade||'',win:s.win?1:0,n:s.n||0,guesses:s.guesses||0,
+    plays,prev,sec:s.endAt?Math.round((Date.now()-s.endAt)/1000):'',shares:(s.shares||[]).join(','),post:s.post||'',cfm:s.cfm||0,grad,ref:REF,refurl:REFURL,page:location.href.slice(0,200)},devInfo())); }catch(e){}
+}); })();
 function clientId(){ try{ let c=localStorage.getItem('koukou-client'); if(!c){ c=Math.random().toString(36).slice(2,12); localStorage.setItem('koukou-client',c);} return c; }catch(e){ return ''; } }
 // 運営専用の入口：URLに ?o=合言葉 がついていたら、開くたびにこの端末を「運営の端末」に登録する（ランキング・段階の数から外す）
 (function(){ try{ const o=new URLSearchParams(location.search).get('o'); if(o && GAS) GAS.withFailureHandler(()=>{}).adminOwner({pass:o,client:clientId()}); }catch(e){} })();

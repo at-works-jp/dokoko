@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>運営用｜作った人ページの分析</title>
+<style>
+  :root{ --bg:#f6f3ec; --ink:#1d232b; --sub:#6b6258; --accent:#c83c28; --bar:#2f6f8f; --bar2:#c9a33a; --card:#fff; --line:#e4dccd; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif; font-size:14px; line-height:1.6; }
+  .wrap{ max-width:980px; margin:0 auto; padding:20px 16px 60px; }
+  h1{ font-size:20px; margin:0 0 4px; } h2{ font-size:15px; margin:0 0 8px; }
+  .sub{ color:var(--sub); font-size:12px; }
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin:12px 0; }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:12px; }
+  .grid .card{ margin:0; }
+  .kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; }
+  .kpi{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px; }
+  .kpi b{ display:block; font-size:22px; } .kpi span{ font-size:12px; color:var(--sub); }
+  .row{ display:grid; grid-template-columns:120px 1fr 90px; gap:8px; align-items:center; margin:3px 0; font-size:13px; }
+  .row .lab{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .track{ background:#eee8dc; border-radius:4px; height:14px; position:relative; overflow:hidden; }
+  .fill{ background:var(--bar); height:100%; border-radius:4px; }
+  .fill.b{ background:var(--bar2); }
+  .val{ text-align:right; font-variant-numeric:tabular-nums; }
+  table{ border-collapse:collapse; width:100%; font-size:12px; }
+  th,td{ border-bottom:1px solid var(--line); padding:4px 6px; text-align:left; white-space:nowrap; }
+  th{ background:#faf7f0; position:sticky; top:0; }
+  .scroll{ overflow:auto; max-height:420px; }
+  .bars{ display:flex; align-items:flex-end; gap:2px; height:120px; border-bottom:1px solid var(--line); }
+
+
+  .axis{ display:flex; gap:2px; font-size:10px; color:var(--sub); }
+  .axis span{ flex:1; text-align:center; overflow:hidden; }
+  input,button,select{ font:inherit; padding:6px 10px; border-radius:8px; border:1px solid var(--line); }
+  button{ background:var(--ink); color:#fff; border:0; cursor:pointer; }
+  .note{ background:#fff7e0; border:1px solid #efd9a0; border-radius:10px; padding:8px 12px; font-size:13px; }
+  .legend span{ display:inline-block; width:10px; height:10px; border-radius:2px; margin:0 4px 0 10px; vertical-align:middle; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>「このアプリを作った人」ページの分析</h1>
+  <div class="sub">運営だけが見られるページです。記録はスプレッドシート「作った人ページ記録」から読んでいます。</div>
+
+  <div class="card" id="login">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <input id="pass" type="password" placeholder="運営の合言葉">
+      <button id="go">読みこむ</button>
+      <label class="sub"><input type="checkbox" id="exOwn" checked> 運営の端末の記録を除く</label>
+      <select id="range"><option value="0">全期間</option><option value="1">今日</option><option value="7">直近7日</option><option value="30">直近30日</option></select>
+      <span id="msg" class="sub"></span>
+    </div>
+  </div>
+  <div id="out"></div>
+</div>
+<script>
+const API='https://script.google.com/macros/s/AKfycbwvDe4IB8MTCbk8fFIwR8zSEFPdmAZ8S2rEXPCSkZ0zkuhaToa9XshZN86Qet4Wco77/exec';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let RAW=null;
+(function(){ const q=new URLSearchParams(location.search).get('o'); let p=q||''; if(!p){ try{ p=localStorage.getItem('koukou-admin')||''; }catch(e){} } $('pass').value=p; if(p) load(); })();
+$('go').onclick=load; $('exOwn').onchange=()=>RAW&&render(); $('range').onchange=()=>RAW&&render();
+function load(){
+  const pass=$('pass').value.trim(); if(!pass){ $('msg').textContent='合言葉を入れてください'; return; }
+  $('msg').textContent='読みこみ中…';
+  fetch(API,{method:'POST',body:JSON.stringify({fn:'getMakerStats',args:[{pass}]})}).then(r=>r.json()).then(j=>{
+    if(!j||!j.ok||!j.r||!j.r.ok){ $('msg').textContent=(j&&j.r&&j.r.msg)||'読みこめませんでした'; return; }
+    try{ localStorage.setItem('koukou-admin',pass); }catch(e){}
+    RAW=j.r; $('msg').textContent='読みこみました（'+new Date().toLocaleString('ja-JP')+'）'; render();
+  }).catch(e=>{ $('msg').textContent='読みこめませんでした：'+e; });
+}
+// ---- 小さな部品 ----
+const pct=(a,b)=>b?Math.round(1000*a/b)/10+'%':'—';
+const median=a=>{ if(!a.length) return null; const s=[...a].sort((x,y)=>x-y), m=s.length>>1; return s.length%2?s[m]:Math.round((s[m-1]+s[m])/2); };
+function kpi(v,l){ return `<div class="kpi"><b>${esc(v)}</b><span>${esc(l)}</span></div>`; }
+function hbars(title,entries,opt){ opt=opt||{}; const max=Math.max(1,...entries.map(e=>e[1]));
+  const rows=entries.map(e=>`<div class="row"><div class="lab" title="${esc(e[0])}">${esc(e[0])}</div><div class="track"><div class="fill ${opt.b?'b':''}" style="width:${100*e[1]/max}%"></div></div><div class="val">${esc(e[2]!=null?e[2]:e[1])}</div></div>`).join('');
+  return `<div class="card"><h2>${esc(title)}</h2>${opt.note?`<div class="sub" style="margin-bottom:6px">${esc(opt.note)}</div>`:''}${rows||'<div class="sub">まだ記録がありません</div>'}</div>`; }
+function count(arr,key,order){ const m=new Map(); arr.forEach(x=>{ const k=key(x); if(k===undefined) return; m.set(k,(m.get(k)||0)+1); });
+  let e=[...m.entries()]; if(order) e.sort((a,b)=>order.indexOf(a[0])-order.indexOf(b[0])); else e.sort((a,b)=>b[1]-a[1]); return e; }
+function bucket(v,edges,labels){ if(v===''||v==null||isNaN(v)) return '不明'; v=+v; for(let i=0;i<edges.length;i++) if(v<edges[i]) return labels[i]; return labels[labels.length-1]; }
+function vbars(title,keys,s1,s2,leg){ const max=Math.max(1,...s1,...(s2||[]));
+  const bars=keys.map((k,i)=>`<div style="flex:1;display:flex;gap:1px;align-items:flex-end;height:100%"><div title="${esc(k)} ${s1[i]}" style="flex:1;min-height:1px;height:${100*s1[i]/max}%;background:var(--bar)"></div>${s2?`<div title="${esc(k)} ${s2[i]}" class="b" style="flex:1;height:${100*s2[i]/max}%;background:var(--bar2)"></div>`:''}</div>`).join('');
+  const step=Math.ceil(keys.length/12); const ax=keys.map((k,i)=>`<span>${i%step===0?esc(k):''}</span>`).join('');
+  return `<div class="card"><h2>${esc(title)}</h2>${leg?`<div class="sub legend">${leg}</div>`:''}<div class="bars">${bars}</div><div class="axis">${ax}</div></div>`; }
+// ---- 本体 ----
+function render(){
+  const H=RAW.head, idx=n=>H.indexOf(n), own=new Set(RAW.owners||[]), exOwn=$('exOwn').checked;
+  const days=+$('range').value, since=days?new Date(Date.now()-(days===1?0:days-1)*864e5):null; if(since) since.setHours(0,0,0,0);
+  const inRange=t=>!since||new Date(t)>=since;
+  const M=RAW.maker.map(r=>{ const o={}; H.forEach((h,i)=>o[h]=r[i]); return o; }).filter(o=>inRange(o['日時'])&&!(exOwn&&(+o['運営']||own.has(o['端末ID']))));
+  const R=RAW.results.map(r=>({t:r[0],sid:r[1],q:+r[2],gs:+r[3],win:+r[4],c:r[5],ref:r[6]})).filter(o=>inRange(o.t)&&!(exOwn&&own.has(o.c)));
+  const clicks=M.filter(o=>o['できごと']==='click'), opens=M.filter(o=>o['できごと']==='open'), mails=M.filter(o=>o['できごと']==='mail');
+  // 訪問ごと（訪問IDでまとめる）
+  const V=new Map(); M.forEach(o=>{ const k=o['訪問ID']||('x'+Math.random()); if(!V.has(k)) V.set(k,{id:k,click:null,open:null,dur:0,scroll:0,sect:0,mail:0,goDokoko:0});
+    const v=V.get(k), ev=o['できごと'];
+    if(ev==='click') v.click=o; if(ev==='open'&&!v.open) v.open=o; if(ev==='mail') v.mail=1;
+    if(o['シェア']==='go-dokoko') v.goDokoko=1;
+    if(ev==='leave'||ev==='mail'||ev==='open'){ v.dur=Math.max(v.dur,+o['滞在(秒)']||0); v.scroll=Math.max(v.scroll,+o['スクロール(%)']||0); v.sect=Math.max(v.sect,+o['見た区切り']||0); } });
+  const visits=[...V.values()].filter(v=>v.open);
+  const fromDokoko=visits.filter(v=>v.click||(v.open&&v.open['入口']==='dokoko'));
+  const cDev=new Set(clicks.map(o=>o['端末ID'])).size, rDev=new Set(R.map(o=>o.c)).size;
+  const durs=visits.map(v=>v.dur).filter(x=>x>0);
+  let h='';
+  if(!M.length) h+=`<div class="note">まだ記録がありません。どこ高の結果画面の「このアプリを作った人」が押されると、ここに出てきます。</div>`;
+  h+=`<div class="kpis" style="margin-top:12px">${[
+    kpi(R.length,'結果画面が出た回数'), kpi(clicks.length,'リンクを押した回数'), kpi(pct(clicks.length,R.length),'押した率（回数）'),
+    kpi(pct(cDev,rDev),'押した率（端末）'), kpi(visits.length,'ページを開いた'), kpi(median(durs)!=null?median(durs)+'秒':'—','見た時間（中央値）'),
+    kpi(pct(visits.filter(v=>v.sect>=6).length,visits.length),'連絡先まで見た'), kpi(mails.length,'メールを押した') ].join('')}</div>`;
+  // 流れ
+  const f=[['結果画面',R.length],['リンクを押した',clicks.length],['ページを開いた',visits.length],['半分以上 下まで見た',visits.filter(v=>v.scroll>=50).length],['連絡先まで見た',visits.filter(v=>v.sect>=6).length],['メールを押した',new Set(mails.map(o=>o['訪問ID'])).size]];
+  h+=hbars('どこで離れたか（流れ）',f.map((e,i)=>[e[0],e[1],e[1]+(i?'（'+pct(e[1],f[i-1][1])+'）':'')]),{note:'かっこ内は、ひとつ前の段からの割合'});
+  // 日ごと
+  const dk=t=>String(t).slice(5,10); const dset=[...new Set([...R.map(o=>dk(o.t)),...clicks.map(o=>dk(o['日時']))])].sort();
+  h+=vbars('日ごと',dset,dset.map(d=>R.filter(o=>dk(o.t)===d).length),dset.map(d=>clicks.filter(o=>dk(o['日時'])===d).length*10),'<span style="background:var(--bar)"></span>結果画面 <span style="background:var(--bar2)"></span>リンクを押した（×10で表示）');
+  const hrs=[...Array(24).keys()]; const hr=t=>+String(t).slice(11,13);
+  h+=vbars('時間帯（押した回数）',hrs.map(x=>x+'時'),hrs.map(x=>clicks.filter(o=>hr(o['日時'])===x).length));
+  h+='<h2 style="margin:22px 0 4px">どんな人が押したか</h2><div class="grid">';
+  const winRate=w=>{ const r=R.filter(o=>o.win===w).length, c=clicks.filter(o=>+o['当たり']===w).length; return [w?'当たった':'外れた',c,`${c}回（${pct(c,r)}）`]; };
+  h+=hbars('当たったか（押した率）',[winRate(1),winRate(0)],{note:'かっこ内は、結果画面のうち押した割合'});
+  h+=hbars('予想回数',count(clicks,o=>(o['予想回数']||'不明')+'回目で決着',['1回目で決着','2回目で決着','3回目で決着']));
+  h+=hbars('質問数',count(clicks,o=>bucket(o['質問数'],[15,20,25,30,40],['〜14問','15〜19問','20〜24問','25〜29問','30〜39問','40問〜']),['〜14問','15〜19問','20〜24問','25〜29問','30〜39問','40問〜','不明']));
+  h+=hbars('都道府県（学校）',count(clicks,o=>o['都道府県']||'不明').slice(0,20));
+  h+=hbars('年代（AIの予想）',count(clicks,o=>o['年代']||'不明'));
+  h+=hbars('卒業年（入れた人）',count(clicks,o=>o['卒業年']?String(o['卒業年']).slice(0,3)+'0年代':'入れていない'));
+  h+=hbars('何回目のゲームか',count(clicks,o=>bucket(o['何回目のゲーム'],[2,3,5,10],['1回目','2回目','3〜4回目','5〜9回目','10回目〜']),['1回目','2回目','3〜4回目','5〜9回目','10回目〜','不明']));
+  h+=hbars('前にも押したか',count(clicks,o=>+o['前に押した回数']>0?'2回目以上':'はじめて',['はじめて','2回目以上']));
+  h+=hbars('結果から押すまで',count(clicks,o=>bucket(o['結果から押すまで(秒)'],[10,30,60,180,600],['〜9秒','10〜29秒','30〜59秒','1〜3分','3〜10分','10分〜']),['〜9秒','10〜29秒','30〜59秒','1〜3分','3〜10分','10分〜','不明']));
+  h+=hbars('そのゲームでシェアしたか',count(clicks,o=>o['シェア']?'シェアした':'していない'));
+  h+=hbars('あるあるを投稿したか',count(clicks,o=>o['あるある投稿']?'投稿した':'していない'));
+  h+=hbars('あるあるを確かめたか',count(clicks,o=>+o['あるある確認']>0?'確かめた':'していない'));
+  h+='</div><h2 style="margin:22px 0 4px">どこから・どんな端末か</h2><div class="grid">';
+  h+=hbars('どこ高に来た元',count(clicks,o=>o['来た元']||'不明'));
+  h+=hbars('ページの入口',count(visits,v=>v.open['入口']||'不明'));
+  h+=hbars('OS',count(M.filter(o=>o['できごと']==='click'||o['できごと']==='open'),o=>o['OS']||'不明'));
+  h+=hbars('アプリ内ブラウザ',count(M.filter(o=>o['できごと']==='click'||o['できごと']==='open'),o=>o['アプリ内']||'ふつうのブラウザ'));
+  h+=hbars('言語',count(M.filter(o=>o['できごと']==='open'),o=>o['言語']||'不明'));
+  h+=hbars('時間帯の設定（海外か）',count(M.filter(o=>o['できごと']==='open'),o=>o['時間帯']||'不明'));
+  h+=hbars('画面の大きさ',count(M.filter(o=>o['できごと']==='open'),o=>o['画面']||'不明').slice(0,10));
+  h+='</div><h2 style="margin:22px 0 4px">ページの見られ方</h2><div class="grid">';
+  h+=hbars('見た時間',count(visits,v=>bucket(v.dur,[5,15,30,60,180],['〜4秒','5〜14秒','15〜29秒','30〜59秒','1〜3分','3分〜']),['〜4秒','5〜14秒','15〜29秒','30〜59秒','1〜3分','3分〜']),{b:1});
+  h+=hbars('どこまで下に見たか',count(visits,v=>bucket(v.scroll,[25,50,75,95],['〜24%','25〜49%','50〜74%','75〜94%','95〜100%']),['〜24%','25〜49%','50〜74%','75〜94%','95〜100%']),{b:1});
+  const SN=['','名前','作ったもの','これまで','相談できること','進め方','連絡先','いちばん下'];
+  h+=hbars('どの区切りまで見たか',SN.slice(1).map((n,i)=>[n,visits.filter(v=>v.sect>=i+1).length]),{b:1,note:'その区切りまで画面に出た訪問の数'});
+  h+=hbars('ページからどこ高に戻った',[['戻った',visits.filter(v=>v.goDokoko).length],['戻っていない',visits.filter(v=>!v.goDokoko).length]],{b:1});
+  h+='</div>';
+  // 一覧
+  const list=visits.concat([...V.values()].filter(v=>!v.open&&v.click)).sort((a,b)=>String((b.click||b.open)['日時']).localeCompare(String((a.click||a.open)['日時']))).slice(0,100);
+  h+=`<div class="card"><h2>訪問ごとの一覧（新しい順・100件まで）</h2><div class="sub">学校名は分析用です。外には出さないでください。</div><div class="scroll"><table><tr>${['日時','入口','学校','都道府県','年代','当たり','質問','押すまで','何回目','シェア','投稿','卒業年','来た元','OS','アプリ内','見た時間','下まで','区切り','メール'].map(x=>`<th>${x}</th>`).join('')}</tr>`+
+    list.map(v=>{ const c=v.click||{}, o=v.open||{}; return `<tr><td>${esc(String((v.click||v.open)['日時']).replace('T',' ').slice(5,16))}</td><td>${esc(o['入口']||c['入口']||'')}</td><td>${esc(c['学校名']||'')}</td><td>${esc(c['都道府県']||'')}</td><td>${esc(c['年代']||'')}</td><td>${c['当たり']===''||c['当たり']==null?'':(+c['当たり']?'○':'×')}</td><td>${esc(c['質問数']||'')}</td><td>${esc(c['結果から押すまで(秒)']!==''&&c['結果から押すまで(秒)']!=null?c['結果から押すまで(秒)']+'秒':'')}</td><td>${esc(c['何回目のゲーム']||'')}</td><td>${esc(c['シェア']||'')}</td><td>${esc(c['あるある投稿']||'')}</td><td>${esc(c['卒業年']||'')}</td><td>${esc(c['来た元']||o['来た元']||'')}</td><td>${esc(o['OS']||c['OS']||'')}</td><td>${esc(o['アプリ内']||c['アプリ内']||'')}</td><td>${v.open?v.dur+'秒':'開いていない'}</td><td>${v.open?v.scroll+'%':''}</td><td>${v.open?esc(SN[v.sect]||''):''}</td><td>${v.mail?'○':''}</td></tr>`; }).join('')+`</table></div></div>`;
+  // 来た元URL
+  const urls=count(M.filter(o=>o['来た元URL']),o=>o['来た元URL']).slice(0,30);
+  h+=hbars('来た元のURL（くわしく）',urls);
+  $('out').innerHTML=h;
+}
+</script>
+</body>
+</html>
