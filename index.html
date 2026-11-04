@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>どこ高？母校当てます</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700;900&family=Yomogi&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5efe4; --ink:#2a2420; --sub:#7a6e62; --line:#e2d7c6; --card:#fffaf2;
+    --accent:#c8462b; --accent2:#2f5d62; --river:#9cc3c9; --glow:#ff8a3d;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:"Zen Kaku Gothic New",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:460px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;padding:18px 18px 28px}
+  header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .logo{font-weight:900;font-size:15px;letter-spacing:.08em}
+  .logosub{font-size:11px;font-weight:700;color:var(--sub);margin-left:8px;letter-spacing:0}
+  .logo b{color:var(--accent);font-size:19px}
+  .counter{font-size:13px;color:var(--sub)}
+  .map{position:relative;background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;aspect-ratio:400/330}
+  .map svg{width:100%;height:100%;display:block}
+  .maplabel{position:absolute;left:12px;bottom:8px;font-size:11px;color:var(--sub)}
+  .dot{transition:r .6s cubic-bezier(.2,.8,.2,1),opacity .6s,fill .6s}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 20px;margin-top:14px}
+  .qno{font-size:12px;color:var(--accent);font-weight:700;letter-spacing:.12em}
+  .qtext{font-size:21px;font-weight:700;line-height:1.55;margin:8px 0 18px;min-height:3.1em;white-space:pre-line}
+  .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  button{font:inherit;border:none;border-radius:12px;padding:13px 10px;font-size:15px;font-weight:700;cursor:pointer;
+    transition:transform .08s, background .2s}
+  button:active{transform:scale(.97)}
+  .yes{background:var(--accent);color:#fff}
+  .no{background:var(--accent2);color:#fff}
+  .btnlink{display:flex;align-items:center;justify-content:center;border-radius:12px;padding:13px 10px;font-size:15px;font-weight:700;text-decoration:none;background:#06c755!important;color:#fff!important}
+  #rankTabs{grid-template-columns:repeat(auto-fit,minmax(90px,1fr));margin:6px 0 10px}
+  .soft{background:#efe5d6;color:var(--ink);font-weight:400;font-size:14px}
+  .unk{grid-column:1/-1;background:transparent;color:var(--sub);border:1px dashed var(--line);font-weight:400;font-size:14px}
+  .link{background:none;color:var(--sub);text-decoration:underline;font-weight:400;font-size:13px;padding:10px;margin-top:6px;width:100%}
+  .big{width:100%;background:var(--accent);color:#fff;font-size:17px;padding:16px}
+  h1{font-size:25px;line-height:1.35;margin:10px 0 6px;font-weight:900}
+  h1 em{font-style:normal;color:var(--accent)}
+  .lead{color:var(--sub);font-size:14px;line-height:1.8;margin:0 0 18px}
+  .reveal-sub{font-size:14px;color:var(--sub)}
+  .reveal-name{font-size:30px;font-weight:900;margin:6px 0 4px;line-height:1.3}
+  .reveal-dec{font-size:15px;color:var(--accent2);font-weight:700;margin-bottom:18px}
+  .fade{animation:fade .45s ease both}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .list{display:flex;flex-direction:column;gap:6px;max-height:46vh;overflow:auto;margin:10px 0}
+  .list button{background:#efe5d6;text-align:left;font-weight:400}
+  .share{background:#efe5d6;border-radius:12px;padding:12px;font-size:13px;line-height:1.7;white-space:pre-wrap;margin:12px 0}
+  .post{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0}
+  .post-h{font-weight:700;margin-bottom:8px}
+  .post input,.post select{width:100%;padding:10px;font-size:16px;border:1px solid var(--line);border-radius:10px;background:#fff;margin-bottom:8px;box-sizing:border-box}
+  .post .small{font-size:12px;color:var(--sub);margin-top:6px}
+  .hist{font-size:12px;color:var(--sub);line-height:1.8;margin-top:12px}
+  .note{font-size:11px;color:var(--sub);margin-top:16px;line-height:1.7}
+  .hidden{display:none}
+  .cloud{background:#1d1b19;border-color:#1d1b19}
+  #cloud{position:absolute;inset:0;overflow:hidden}
+  .w{position:absolute;left:0;top:0;white-space:nowrap;color:#f4ece0;font-weight:700;
+     transition:opacity 1s ease, font-size 1s ease, color 1s ease;will-change:transform;pointer-events:none}
+  .w.hot{color:#ffb98a;text-shadow:0 0 14px rgba(255,138,61,.45)}
+  .cloud .maplabel{color:#9d9184}
+  #cloudName{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.6);opacity:0;
+     color:#fff;font-weight:900;font-size:30px;letter-spacing:.04em;white-space:nowrap;
+     text-shadow:0 0 22px rgba(255,138,61,.75),0 0 4px rgba(255,138,61,.9);
+     transition:opacity .9s ease, transform .9s cubic-bezier(.2,.9,.2,1.2);pointer-events:none}
+  #cloudName.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  #jmap{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .cloud{background:#1f2b33;border-color:#1f2b33}
+  .cloud .maplabel{color:#cfc6b6;background:#00000060;padding:2px 8px;border-radius:10px}
+  #aruBox{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:14px;background:rgba(20,28,33,.78);text-align:center}
+  #aruBox.on{display:flex;animation:fade .6s ease}
+  #aruName{color:#fff;font-weight:900;font-size:28px;margin-bottom:10px;text-shadow:0 0 18px rgba(255,138,61,.6)}
+  #aruList{display:flex;flex-wrap:wrap;gap:7px;justify-content:center}
+  #aruList span{background:#fffaf2;color:#2a2420;border-radius:10px;padding:.3em .6em;font-size:inherit;font-weight:700;line-height:1.3}
+  #aruBox.on~.maplabel{display:none}
+  #s-guess .reveal-dec{font-weight:400}
+  #s-q,#s-guess{background:#2f4a3a;border:9px solid #8a6a44;color:#f1eee4;font-family:'Yomogi','Zen Kaku Gothic New',cursive}
+  #s-q .qno{color:#f3b8a6;font-weight:400}
+  #s-q .qtext,#s-guess .reveal-name{font-weight:400}
+  #s-q button,#s-guess button{font-family:inherit;font-weight:400;font-size:18px;background:transparent;color:#f1eee4;border:2px solid rgba(241,238,228,.75)}
+  #s-q .yes,#s-guess .yes{border-color:#f3b8a6;color:#f3b8a6}
+  #s-q .no,#s-guess .no{border-color:#a9d4dc;color:#a9d4dc}
+  #s-q .soft{border-style:dashed;border-color:rgba(241,238,228,.5);font-size:16px}
+  #s-q .unk{border:none;color:rgba(241,238,228,.6);font-size:15px}
+  #s-q .link{border:none;color:rgba(241,238,228,.7);font-size:15px}
+  #s-guess .reveal-sub{color:#f3b8a6}
+  #s-guess .reveal-dec{color:#a9d4dc}
+  .chalkring{position:absolute;inset:-6px -3px;border:3px solid #f6e27a;border-radius:50% 46% 52% 44%;transform:rotate(-3deg);pointer-events:none;animation:chalk .3s ease-out}
+  @keyframes chalk{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+  #s-q button{position:relative}
+  .menu{display:flex;flex-direction:column;gap:10px}
+  .menu button{width:100%;padding:16px;font-size:16px}
+  .sub2{background:var(--accent2);color:#fff}
+  .ghost{background:#efe5d6;color:var(--ink)}
+  .badge{display:inline-block;font-size:11px;background:#efe5d6;color:var(--sub);border-radius:20px;padding:3px 10px;margin-bottom:10px}
+  .qlist{display:flex;flex-direction:column;gap:6px;max-height:40vh;overflow:auto;margin:10px 0}
+  .qlist button{background:#efe5d6;text-align:left;font-weight:400;font-size:14px;line-height:1.5}
+  .qlist .cat{font-size:11px;color:var(--sub);margin:8px 0 2px}
+  .alog{font-size:13px;line-height:1.8;max-height:22vh;overflow:auto;margin:6px 0 10px}
+  .alog b{color:var(--accent)}
+  .rank{width:100%;border-collapse:collapse;font-size:14px;margin:6px 0 14px}
+  .rank td{padding:7px 4px;border-bottom:1px solid var(--line)}
+  .rank td.n{width:28px;color:var(--sub);font-weight:700}
+  .rank td.v{text-align:right;color:var(--accent2);font-weight:700;white-space:nowrap}
+  h2{font-size:17px;margin:4px 0 2px}
+  .small{font-size:12px;color:var(--sub);line-height:1.7}
+  .points{font-size:15px;color:var(--accent2);font-weight:700;margin:-6px 0 12px}
+  #keyBtn{position:absolute;right:10px;bottom:8px;width:15px;height:19px;background:transparent;border:0;padding:0;opacity:.55;display:none;z-index:3}
+  #keyBtn svg{width:100%;height:100%}
+  .kbox{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:14px 0}
+  .kbox input{width:96px;font-size:18px;text-align:center;letter-spacing:.35em;padding:8px 4px;border:2px dashed #c9bfae;border-radius:8px;background:#fff}
+  .kbox input.lit{border:2px solid var(--accent);box-shadow:0 0 6px #c8462b55}
+  .album li{padding:8px 0;border-bottom:1px solid var(--line);font-size:15px;list-style:none}
+  .album ul{padding:0;margin:8px 0 12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><div class="logo"><b>どこ高？</b><span class="logosub">母校当てます</span></div><div class="counter" id="counter">全国版</div></header>
+
+  <div class="map cloud" id="mapbox"><canvas id="jmap"></canvas><div id="aruBox"><div id="aruName"></div><div id="aruList"></div></div><div class="maplabel" id="maplabel">岐阜市</div><button id="keyBtn" aria-label="鍵穴"><svg viewBox="0 0 30 38"><circle cx="15" cy="12" r="7.5" fill="none" stroke="#e9e4d8" stroke-width="1.6"/><path d="M11 17 L8.5 33 L21.5 33 L19 17" fill="none" stroke="#e9e4d8" stroke-width="1.6" stroke-linejoin="round"/></svg></button></div>
+
+  <!-- スタート -->
+  <section class="card fade" id="s-start">
+    <span class="badge">AI育成中</span>
+    <h1>答えていくうちに<br>AIが<em>母校</em>を当てます</h1>
+    <p class="lead">全国47都道府県の高校（統合でなくなった学校も含む）が対象です。<br>AIはまだ育成中です。当てられない母校もあります。当てられなかったら自慢してください。</p>
+    <div class="menu">
+      <button class="big" id="startBtn">当てられるか試す</button>
+      <button class="ghost" id="rankBtn">ランキング</button>
+    </div>
+    <p class="note" id="privNote">答えはこの端末の中だけで計算し、どこにも送りません。</p>
+    <p class="note" style="text-align:center;margin-top:14px;opacity:.7">© A&amp;T Works</p>
+  </section>
+
+  <!-- 逆モード -->
+  <section class="card hidden" id="s-rev">
+    <div class="qno" id="rqno">逆モード</div>
+    <div class="qtext" style="min-height:0;font-size:18px">AIが思い浮かべた高校を当ててください。質問を選ぶとAIが答えます。</div>
+    <div class="alog" id="alog"></div>
+    <div class="qlist" id="qlist"></div>
+    <div class="btns">
+      <button class="yes" id="revGuessBtn">答えを言う</button>
+      <button class="soft" id="revGiveBtn">降参する</button>
+    </div>
+  </section>
+
+  <!-- 逆モード：学校を選ぶ -->
+  <section class="card hidden" id="s-revpick">
+    <div class="qtext" style="min-height:0;font-size:18px">AIの高校はどれ？</div>
+    <div class="list" id="revPickList"></div>
+    <button class="link" id="revBackBtn">質問にもどる</button>
+  </section>
+
+  <!-- ランキング -->
+  <section class="card hidden" id="s-rank">
+    <div class="btns" id="rankTabs"></div>
+    <table class="rank hidden" id="hardRank"></table>
+    <h2 id="powTitle">母校パワーランキング（準備中）</h2>
+    <p class="small" id="powNote">遊んだ回数 × 早く当てられた度。みんなで遊ぶほど、早く当てられるほど母校が上がる！（準備中）</p>
+    <div id="myRank" class="post" style="display:none;cursor:pointer;margin:6px 0"></div>
+    <input id="rankSearch" placeholder="学校名でさがす（例：岐阜北）" style="width:100%;padding:10px;font-size:16px;border:1px solid var(--line);border-radius:10px;background:#fff;margin:4px 0 6px;box-sizing:border-box">
+    <div id="rankBox" style="position:relative;max-height:42vh;overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fff;padding:0 8px">
+      <table class="rank" id="powRank" style="margin:0"></table>
+    </div>
+    <button class="big" id="rankBackBtn" style="margin-top:10px">もどる</button>
+  </section>
+
+  <!-- 質問 -->
+  <section class="card hidden" id="s-q">
+    <div class="qno" id="qno">QUESTION 1</div>
+    <div style="color:#f6e7a8;font-size:14px;margin-bottom:6px">※ 高校生のころのことで答えてください</div>
+    <div class="qtext" id="qtext"></div>
+    <div class="btns">
+      <button class="yes" data-a="yes">はい</button>
+      <button class="no" data-a="no">いいえ</button>
+      <button class="soft" data-a="pyes">たぶんそう</button>
+      <button class="soft" data-a="pno">たぶん違う</button>
+      <button class="unk" data-a="unk">わからない・覚えてない</button>
+    </div>
+    <button class="link" id="forceBtn">もう当てて！</button>
+  </section>
+
+  <!-- 予想 -->
+  <section class="card hidden" id="s-guess">
+    <div class="reveal-sub">わかりました。あなたの母校は…</div>
+    <div class="reveal-name" id="gname"></div>
+    <div class="reveal-dec" id="gdec"></div>
+    <div class="btns">
+      <button class="yes" id="rightBtn">当たった…</button>
+      <button class="no" id="wrongBtn">ちがう</button>
+    </div>
+  </section>
+
+  <!-- 正解選択 -->
+  <section class="card hidden" id="s-pick">
+    <div class="qtext" style="min-height:0">まいりました…<br>答えを教えると次からあなたの母校が当たりやすくなります</div>
+    <input id="pickSearch" placeholder="母校の名前の一部（昔の校名でもOK・例：仙台）" style="width:100%;padding:10px;font-size:16px;border:1px solid var(--line);border-radius:10px;background:#fff;margin-top:8px">
+    <div class="list" id="pickList"></div>
+  </section>
+
+
+  <!-- 観戦モード（ロゴを5回タップで開く。運営用） -->
+  <section class="card hidden" id="s-watch">
+    <div class="qno" id="wTitle">観戦モード（運営用）</div>
+    <div id="wSetup">
+      <input id="wSearch" placeholder="学校名で検索（例：岐阜北）" style="width:100%;padding:10px;font-size:16px;border:1px solid var(--line);border-radius:10px;background:#fff">
+      <div class="list" id="wList" style="max-height:30vh"></div>
+      <div class="btns">
+        <button class="yes" id="wRandom">おまかせで連続再生</button>
+        <button class="soft" id="wSpeed">速さ：ふつう</button>
+      </div>
+    </div>
+    <div id="wRun" class="hidden">
+      <div class="small" id="wWho"></div>
+      <div class="alog" id="wLog" style="max-height:34vh"></div>
+      <div class="btns">
+        <button class="soft" id="wPause">一時停止</button>
+        <button class="soft" id="wNext">次の学校</button>
+      </div>
+    </div>
+    <div id="wAdmin" style="margin-top:14px;border-top:1px dashed var(--line);padding-top:10px">
+      <div class="small"><b>あるあるの管理</b></div>
+      <div style="display:flex;gap:8px;margin-top:6px"><input id="aPass" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="合言葉" style="-webkit-text-security:disc;flex:1;padding:10px;font-size:16px;border:1px solid var(--line);border-radius:10px;background:#fff"><button class="soft" id="aLogin">一覧を出す</button></div>
+      <div class="small" id="aMsg"></div>
+      <button class="soft" id="aOwner" style="width:100%;margin-top:6px">この端末の結果をランキングに入れない</button>
+      <div class="small" id="oMsg"></div>
+      <div id="aList" style="max-height:45vh;overflow:auto"></div>
+    </div>
+    <button class="link" id="wBack">観戦をやめる</button>
+  </section>
+  <!-- 鍵穴 -->
+  <section class="card hidden" id="s-key">
+    <div class="small" style="text-align:center">4文字の言葉が、5つ。</div>
+    <div class="kbox" id="kbox"></div>
+    <button class="big" id="kOpen">開ける</button>
+    <div class="small" id="kMsg" style="text-align:center;margin-top:8px"></div>
+    <button class="link" id="kBack">もどる</button>
+  </section>
+  <!-- 母校のアルバム -->
+  <section class="card hidden album" id="s-album">
+    <div class="small">ぼこうへ、おかえり。</div>
+    <h2 id="alName"></h2>
+    <div class="small" id="alPlayers"></div>
+    <ul id="alList"></ul>
+    <div class="post">
+      <div class="post-h">あなたも1つ、残していこう</div>
+      <input id="alText" maxlength="25" placeholder="例：購買のパンで一番人気はカレーパン">
+      <button class="soft" id="alPost">残す</button>
+      <div class="small" id="alMsg"></div>
+    </div>
+    <input id="alSearch" placeholder="ほかの母校をさがす（学校名の一部）" style="width:100%;padding:10px;font-size:16px;border:1px solid var(--line);border-radius:10px;background:#fff;margin:6px 0">
+    <div class="qlist" id="alPick"></div>
+    <button class="link" id="alBack">もどる</button>
+  </section>
+  <!-- 結果 -->
+  <section class="card hidden" id="s-end">
+    <div class="reveal-sub" id="endSub"></div>
+    <div class="reveal-name" id="endName"></div>
+    <div id="devBox" style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;text-align:center;margin:6px 0 10px">
+      <div style="font-size:13px;color:var(--sub)">母校らしさ偏差値</div>
+      <div id="devNum" style="font-size:44px;font-weight:900;color:var(--accent);line-height:1.1"></div>
+      <div id="devCom" style="font-size:16px;font-weight:700;color:var(--accent2)"></div>
+    </div>
+    <div id="mayoi" style="font-size:14px;color:var(--sub);margin:0 0 10px"></div>
+    <button class="big" id="imgShareBtn" style="background:#22313a;margin:0 0 12px">結果を画像でシェア</button>
+    <div id="imgBox" style="display:none;margin:10px 0;text-align:center">
+      <img id="imgOut" style="width:100%;border-radius:12px;border:1px solid var(--line)" alt="結果の画像">
+      <div class="small">画像を長押しすると、保存やシェアができます</div>
+    </div>
+    <div class="points" id="endPts"></div>
+    <div class="share" id="shareText" style="cursor:pointer"></div>
+    <div class="small" id="copyMsg" style="text-align:right;margin:-4px 0 8px">タップでコピー</div>
+    <div class="btns">
+      <a class="soft btnlink" id="lineBtn" target="_blank" rel="noopener">LINEで送る</a>
+      <a class="soft btnlink" id="xBtn" target="_blank" rel="noopener" style="background:#000!important">Xでポスト</a>
+    </div>
+    <div class="post" id="cfmBox" style="display:none">
+      <div class="post-h">同じ母校の人が書いた「あるある」<br>これって、ある？</div>
+      <div id="cfmList"></div>
+    </div>
+    <div class="post" id="postBox">
+      <div class="post-h" id="postHead">この学校の「あるある」を教えて！</div>
+      <input id="postText" maxlength="25" placeholder="例：購買のパンで一番人気はカレーパン">
+      <select id="postGrad"><option value="">卒業年（任意）</option></select>
+      <button class="soft" id="postBtn">送る</button>
+      <div class="small" id="postMsg">同じあるあるが何人かから届くと、ゲームに出るようになります</div>
+    </div>
+    <div style="text-align:center;margin:14px 0 8px;font-size:15px;font-weight:bold;color:var(--accent)">同じ高校でも<br>質問の順番や中身が少しずつ変わります</div>
+    <div class="btns">
+      <button class="yes" id="replayBtn">もう一回あそぶ</button>
+      <button class="yes" id="againBtn">メニューへ</button>
+      <button class="soft" id="bokouBtn" style="display:none">ぼこうへ</button>
+    </div>
+    <div class="hist" id="hist"></div>
+  </section>
+</div>
+
+<script src="koukou_data.js?v=ca6c5a5198"></script>
+<script>// 出身高校当てエンジン（ブラウザとNode共通）
+(function (root) {
+  const EPS = 0.08;
+  const REGION_TH = 0.85;
+  const NAMED_FROM = (typeof process!=='undefined' && process.env && process.env.NF) ? +process.env.NF : 14, NAMED_W = 0.8;  // 「◯◯県？」のような地名そのものの質問は、序盤は出さない
+  const KQ_FROM = (typeof process!=='undefined' && process.env && process.env.KQ) ? +process.env.KQ : 10; // 県名のかわりの質問を出してよい問目
+  const RAND = (typeof process!=='undefined' && process.env && process.env.RAND) ? +process.env.RAND : 0.85; // 一番よい質問の何割以上なら、その中からランダムに選ぶ（同じ学校でも毎回ちがう質問にする）
+  const AVOID_W = (typeof process!=='undefined' && process.env && process.env.AW) ? +process.env.AW : 0.5; // 前回出た質問の点数を何倍にするか
+  const AVOID_N = (typeof process!=='undefined' && process.env && process.env.AN) ? +process.env.AN : 5; // 何問目までその後回しをするか
+  const STALL = 0.04;                     // これ以下の情報量しか得られないなら予想に進む                // 地域だけの質問を出してよい、その地域の確率                       // 覚え違い・答え間違いの余地
+  const SOFT = { yes: 1, pyes: 0.75, unk: 0.5, pno: 0.25, no: 0 };
+  function lik(p, a) { // a: 回答の「はい度」0〜1
+    const pp = EPS * 0.5 + (1 - EPS) * p;
+    return a * pp + (1 - a) * (1 - pp);
+  }
+  function H(ws) { let s = 0; for (const w of ws) if (w > 0) s -= w * Math.log2(w); return s; }
+  function norm(ws) { const t = ws.reduce((a, b) => a + b, 0) || 1; return ws.map(w => w / t); }
+  function schoolMarg(D, post) {
+    const m = {};
+    D.candidates.forEach((c, i) => { m[c.sid] = (m[c.sid] || 0) + post[i]; });
+    return Object.entries(m).sort((a, b) => b[1] - a[1]);
+  }
+  function newGame(D) {
+    if (D.questions.some(q => q.dyn)) D.questions = D.questions.filter(q => !q.dyn); // 前のゲームで作った地図の質問は捨てる
+    return { post: D.candidates.map(c => c.w), asked: [], excluded: new Set(), n: 0 };
+  }
+  function prep(D) {
+    if (D._si) return;
+    const idx = {}; D._schools = [];
+    D._si = new Int32Array(D.candidates.length);
+    D.candidates.forEach((c, i) => { if (!(c.sid in idx)) { idx[c.sid] = D._schools.length; D._schools.push(c.sid); } D._si[i] = idx[c.sid]; });
+    D._ns = D._schools.length;
+  }
+  function Hm(D, ws, tot) { // 学校ごとに合計してからエントロピー
+    const acc = D._acc || (D._acc = new Float64Array(D._ns)); acc.fill(0);
+    for (let i = 0; i < ws.length; i++) acc[D._si[i]] += ws[i];
+    let h = 0;
+    for (let k = 0; k < acc.length; k++) { const p = acc[k] / tot; if (p > 0) h -= p * Math.log2(p); }
+    return h;
+  }
+  var LIFE_K = (typeof process!=='undefined' && process.env && process.env.LK) ? +process.env.LK : 0, LIFE_B = (typeof process!=='undefined' && process.env && process.env.LB) ? +process.env.LB : 1;
+  var PLACE_FIRST = (typeof process!=='undefined' && process.env && process.env.PF) ? +process.env.PF : 0;
+  var LATE_NOPLACE = (typeof process!=='undefined' && process.env && process.env.LATE) ? +process.env.LATE : 0;
+  var SKIP = (typeof process!=='undefined' && process.env && process.env.SKIP) ? process.env.SKIP.split(',') : null;
+  var GEO = (typeof process!=='undefined' && process.env && process.env.GEO!==undefined) ? +process.env.GEO : 1;
+  var GEO_FROM = (typeof process!=='undefined' && process.env && process.env.GF) ? +process.env.GF : 6;
+  var GEO_KM = (typeof process!=='undefined' && process.env && process.env.GK) ? +process.env.GK : 40;
+  var GEO_SOFT = (typeof process!=='undefined' && process.env && process.env.GS) ? +process.env.GS : 0.9;
+  function geoQuestions(D, g) {
+    const S = D.schools; if (!S) return [];
+    const m = schoolMarg(D, g.post).filter(x => !g.excluded.has(x[0]) && S[x[0]] && S[x[0]].lat);
+    if (!m.length || m[0][1] >= 0.85) return [];
+    const area = []; let cum = 0;
+    for (const x of m) { area.push(x); cum += x[1]; if (cum >= 0.95 || area.length >= 40) break; }
+    if (area.length < 3) return [];
+    const lats = area.map(x => S[x[0]].lat), lons = area.map(x => S[x[0]].lon);
+    const spanKm = Math.max((Math.max(...lats) - Math.min(...lats)) * 111, (Math.max(...lons) - Math.min(...lons)) * 91);
+    if (spanKm > GEO_KM) return [];
+    const out = [], done = g._geoDone || (g._geoDone = new Set());
+    for (const ax of ['lat', 'lon']) {
+      const arr = area.slice().sort((a, b) => S[a[0]][ax] - S[b[0]][ax]);
+      let c = 0, ref = null, bestd = 9;
+      for (const x of arr) { const below = c, above = cum - c - x[1]; const d = Math.abs(above - below) / cum; if (d < bestd) { bestd = d; ref = x[0]; } c += x[1]; }
+      if (!ref) continue;
+      const key = ax + ':' + ref; if (done.has(key)) continue;
+      const v = S[ref][ax], nm = S[ref].name.replace(/（.*）/, '');
+      const p = D.candidates.map(cd => { const s = S[cd.sid]; if (!s || !s.lat) return 0.5; if (cd.sid === ref) return 0.5; const dv = s[ax] - v; return Math.abs(dv) < 0.002 ? 0.5 : (dv > 0 ? GEO_SOFT : 1 - GEO_SOFT); });
+      const N = ax === 'lat' ? ['北', '南'] : ['東', '西'];
+      out.push({ id: 'GEO_' + ax + '_' + ref, text: '学校は、' + nm + 'より' + N[0] + 'にある？', alt: '学校は、' + nm + 'より' + N[1] + 'にある？',
+                 cat: '場所', look: '○', ans: 0.85, p, geoKey: key });
+    }
+    return out;
+  }
+  function nextQuestion(D, g) {
+    if (g._nqN === g.n && g._nqA === g.asked.length) return g._nq;
+    prep(D);
+    const n = g.post.length;
+    // 学校単位のエントロピー（年代は当てたい対象ではないので学校で測る）
+    const curH = Hm(D, g.post, 1);
+    // 地域ごとの確率（その地域だけの質問は、地域がほぼ決まってから出す）
+    const reg = {};
+    D.candidates.forEach((c, i) => { const r = c.region || 'gifu'; reg[r] = (reg[r] || 0) + g.post[i]; });
+    let best = null, bestS = -1; const pool = [];
+    if (!D._yes || D._yes.length !== n) { D._yes = new Float64Array(n); D._no = new Float64Array(n); }
+    const yes = D._yes, no = D._no;
+    D.questions.forEach((q, qi) => {
+      if (q.look === '×' || g.asked.includes(qi) || (q.dyn && q.g !== g) || (SKIP && SKIP.indexOf(q.id) >= 0)) return;
+      if (q.nm && g.n < NAMED_FROM) return;
+      if ((q.kq || (q.id && q.id.indexOf('KQ_') === 0)) && g.n < KQ_FROM) return; // 県のかわり質問は、地方がしぼれてから
+      if (q.cat === '場所' && LATE_NOPLACE && g.n >= LATE_NOPLACE && !g._fallback) return;
+      if (PLACE_FIRST && !g._fallback) { const pl = (q.cat === '場所' || q.cat === '型'); if (g.n < PLACE_FIRST ? !pl : pl) return; }
+      if (q.region) { const rs = Array.isArray(q.region) ? q.region : [q.region]; if (rs.reduce((a, r) => a + (reg[r] || 0), 0) < REGION_TH) return; }
+      let py = 0;
+      for (let i = 0; i < n; i++) { const w = g.post[i], l1 = EPS * 0.5 + (1 - EPS) * q.p[i]; yes[i] = w * l1; no[i] = w - yes[i]; py += yes[i]; }
+      if (py <= 1e-12 || py >= 1 - 1e-12) return;
+      const gain = curH - (py * Hm(D, yes, py) + (1 - py) * Hm(D, no, 1 - py));
+      let sc = gain * q.ans * (q.nm ? NAMED_W : 1);
+      if (g.avoid && g.n < AVOID_N && g.avoid.indexOf(q.id) >= 0) sc *= AVOID_W; // 前回出た質問は後回し
+      if (LIFE_K && g.n >= LIFE_K && q.cat !== '場所' && q.cat !== '型') sc *= LIFE_B;
+      pool.push([qi, sc]);
+      if (sc > bestS) { bestS = sc; best = qi; }
+    });
+    if (RAND < 1 && pool.length > 1 && bestS > 0) { // 似たよさの質問からランダムに選ぶ（よいものほど選ばれやすい）
+      const ok = pool.filter(x => x[1] >= RAND * bestS); let t = 0; ok.forEach(x => t += x[1]); let r = Math.random() * t;
+      for (const x of ok) { r -= x[1]; if (r <= 0) { best = x[0]; break; } }
+    }
+    // 終盤：候補が近くに集まったら、地図で半分に分ける質問をその場で作る
+    if (GEO && g.n >= GEO_FROM) {
+      for (const q of geoQuestions(D, g)) {
+        let py = 0;
+        for (let i = 0; i < n; i++) { const w = g.post[i], l1 = EPS * 0.5 + (1 - EPS) * q.p[i]; yes[i] = w * l1; no[i] = w - yes[i]; py += yes[i]; }
+        if (py <= 1e-12 || py >= 1 - 1e-12) continue;
+        const sc = (curH - (py * Hm(D, yes, py) + (1 - py) * Hm(D, no, 1 - py))) * q.ans;
+        if (sc > bestS) { bestS = sc; best = { dynq: q }; }
+      }
+      if (best && best.dynq) { const q = best.dynq; q.dyn = true; q.g = g; D.questions.push(q); best = D.questions.length - 1; }
+    }
+    if (best === null && !g._fallback && (LATE_NOPLACE || PLACE_FIRST)) { g._fallback = true; g._nqN = -1; const b = nextQuestion(D, g); g._fallback = false; return b; }
+    g.bestScore = bestS; g._nq = best; g._nqN = g.n; g._nqA = g.asked.length;
+    return best;
+  }
+  function answer(D, g, qi, key) {
+    const a = SOFT[key]; g.asked.push(qi); g.n++;
+    const qq = D.questions[qi]; if (qq.geoKey) (g._geoDone || (g._geoDone = new Set())).add(qq.geoKey);
+    if (key === 'unk') return;
+    (g.ans || (g.ans = [])).push([qi, a]);
+    g.post = norm(g.post.map((w, i) => w * lik(qq.p[i], a)));
+  }
+  // 母校らしさ：その学校の卒業生らしい答えか、全国の平均的な答えかを比べた点（1問あたりの平均）
+  function rashisa(D, g, sid) {
+    const ans = (g.ans || []).filter(([qi]) => !D.questions[qi].dyn);
+    const idx = []; D.candidates.forEach((c, i) => { if (c.sid === sid) idx.push(i); });
+    if (!idx.length || ans.length < 3) return null;
+    const w = idx.map(i => D.candidates[i].w);
+    for (const [qi, a] of ans) { const q = D.questions[qi]; idx.forEach((ci, k) => { w[k] *= lik(q.p[ci], a); }); }
+    const ws = w.reduce((x, y) => x + y, 0) || 1;
+    let s = 0;
+    for (const [qi, a] of ans) {
+      const q = D.questions[qi];
+      if (q._pm === undefined) { let t = 0, u = 0; D.candidates.forEach((c, i) => { t += c.w * q.p[i]; u += c.w; }); q._pm = t / u; }
+      let ps = 0; idx.forEach((ci, k) => { ps += w[k] * q.p[ci]; }); ps /= ws;
+      s += Math.log(lik(ps, a) / lik(q._pm, a));
+    }
+    return s / ans.length;
+  }
+  // 点を偏差値に：これまでのゲームの中での順位を、ふつうの偏差値の山の形に当てはめる
+  function hensachi(D, r) {
+    const R = D.rr; if (r === null || !R || R.length < 20) return null;
+    let lo = 0, eq = 0; for (const x of R) { if (x < r) lo++; else if (x === r) eq++; }
+    const pc = (lo + eq / 2 + 0.5) / (R.length + 1);
+    // 標準正規分布の逆関数（近似）
+    const t = Math.sqrt(-2 * Math.log(pc < 0.5 ? pc : 1 - pc));
+    let z = t - (2.515517 + 0.802853 * t + 0.010328 * t * t) / (1 + 1.432788 * t + 0.189269 * t * t + 0.001308 * t * t * t);
+    if (pc < 0.5) z = -z;
+    return Math.max(25, Math.min(80, Math.round(50 + 10 * z)));
+  }
+  // 「ピンとくる？」の答え：その学校なら「はい」になりやすく、ほかの学校なら「いいえ」になりやすい
+  const PIN_IN = 0.85, PIN_OUT = 0.12;
+  function answerSid(D, g, sid, key) {
+    const a = SOFT[key]; g.n++;
+    if (key === 'unk') return;
+    g._nqN = -1;
+    g.post = norm(g.post.map((w, i) => w * lik(D.candidates[i].sid === sid ? PIN_IN : PIN_OUT, a)));
+  }
+  function top(D, g) {
+    const m = schoolMarg(D, g.post).filter(x => !g.excluded.has(x[0]));
+    const [sid, pr] = m[0] || [];
+    // その学校の中で一番ありそうな年代
+    let best = null;
+    D.candidates.forEach((c, i) => { if (c.sid === sid && (!best || g.post[i] > g.post[best])) best = i; });
+    return { sid, prob: pr, school: D.candidates[best].school, decade: D.candidates[best].decade,
+             decadeProb: g.post[best] / pr };
+  }
+  function exclude(D, g, sid) {
+    g.excluded.add(sid); g._nqN = -1;
+    g.post = norm(g.post.map((w, i) => D.candidates[i].sid === sid ? 0 : w));
+  }
+  function shouldGuess(D, g) {
+    const t = top(D, g);
+    if (t.prob >= 0.85 || g.n >= 25 || (g.n >= 14 && t.prob >= 0.65)) return true;
+    if (nextQuestion(D, g) === null) return true;
+    // もう聞いても差がつかない（どの質問でも情報が少ない）なら予想する
+    return g.n >= 8 && t.prob >= 0.4 && g.bestScore < STALL;
+  }
+  const api = { newGame, nextQuestion, answer, answerSid, top, exclude, shouldGuess, schoolMarg, rashisa, hensachi };
+  if (typeof module !== 'undefined') module.exports = api; else root.Engine = api;
+})(this);
+</script>
+<script>
+const D = window.GAME_DATA, E = window.Engine;
+if (D.z) { // まとめたデータを展開
+  const CH = '0123456789abcdefghijklmnopqrstuvwxyz', lv = ch => 0.02 + CH.indexOf(ch) / 35 * 0.96;
+  const LV = new Float32Array(128); for (let k = 0; k < CH.length; k++) LV[CH.charCodeAt(k)] = lv(CH[k]);
+  D.candidates = D.cs.map(([si, di, w], i) => { const sid = D.sids[si], s = D.schools[sid];
+    return { sid, school: s.name, decade: D.decs[di], w: w / 1e6, region: s.region || 'gifu', si, di, pv: +D.pv[i] }; });
+  D.questions.forEach(q => {
+    const n = D.candidates.length, p = new Float32Array(n);
+    if (q.b && q.b.indexOf('{') >= 0) q.b = q.b.replace(/\{(.)(\d+)\}/g, (m, c, k) => c.repeat(+k));
+    if (q.b) { for (let i = 0; i < n; i++) p[i] = LV[q.b.charCodeAt(D.candidates[i].si)]; }
+    else { for (let i = 0; i < n; i++) { const c = D.candidates[i]; p[i] = LV[q.bd.charCodeAt(c.di * 2 + c.pv)]; } }
+    if (q.o) { let idx = 0; for (const part of q.o.split(',')) { idx += parseInt(part.slice(0, -1), 16); p[idx] = lv(part.slice(-1)); } }
+    q.p = p; delete q.b; delete q.bd; delete q.o; });
+  delete D.cs; delete D.pv;
+}
+
+const $ = id => document.getElementById(id);
+let g, curQ, guesses, log, qlog=[];
+
+// ---- 地図 ----
+const LON0=136.655, LON1=136.865, LAT0=35.345, LAT1=35.500, W=400, Hh=330;
+const px = lon => (lon-LON0)/(LON1-LON0)*W;
+const py = lat => (LAT1-lat)/(LAT1-LAT0)*Hh;
+const OFF = {mita:[6,-5], johoku:[-6,5], nishiko:[6,4], sogo:[-6,-4], higashi:[6,0], tomita:[-6,0]};
+const RIVER=[[35.500,136.865],[35.478,136.852],[35.462,136.836],[35.449,136.814],[35.441,136.795],[35.437,136.779],
+  [35.433,136.762],[35.428,136.745],[35.420,136.728],[35.408,136.712],[35.392,136.700],[35.370,136.690],[35.345,136.683]];
+const JP="978,1180 980,1176 974,1168 973,1164 968,1163 968,1167 972,1173 977,1176 978,1180|1166,1248 1167,1244 1165,1240 1162,1236 1160,1232 1158,1225 1155,1217 1153,1211 1150,1201 1146,1191 1145,1186 1146,1182 1150,1180 1148,1176 1145,1165 1142,1160 1139,1155 1139,1149 1136,1142 1134,1138 1128,1138 1124,1140 1122,1145 1116,1146 1111,1146 1107,1145 1103,1140 1101,1136 1106,1135 1110,1133 1108,1128 1113,1129 1106,1123 1101,1122 1098,1116 1094,1112 1087,1110 1082,1109 1077,1107 1073,1105 1069,1102 1067,1107 1073,1111 1077,1119 1078,1124 1080,1133 1078,1137 1075,1144 1070,1146 1070,1153 1064,1156 1060,1157 1061,1161 1066,1162 1071,1161 1072,1157 1076,1156 1080,1161 1081,1165 1081,1169 1074,1171 1069,1173 1064,1172 1061,1168 1060,1164 1057,1160 1054,1154 1052,1147 1055,1137 1056,1133 1060,1130 1066,1127 1065,1122 1062,1118 1059,1115 1055,1116 1052,1119 1050,1123 1045,1125 1030,1125 1025,1124 1021,1126 1019,1132 1017,1138 1012,1141 1016,1142 1020,1141 1023,1138 1029,1145 1032,1149 1033,1153 1032,1159 1034,1163 1030,1167 1026,1172 1020,1175 1017,1179 1018,1183 1024,1182 1020,1186 1022,1193 1020,1197 1017,1202 1020,1205 1018,1209 1021,1212 1025,1213 1028,1210 1032,1212 1034,1216 1043,1226 1046,1229 1047,1235 1051,1234 1051,1239 1054,1242 1057,1245 1055,1249 1060,1251 1056,1255 1064,1261 1067,1265 1048,1262 1054,1268 1058,1270 1063,1270 1060,1273 1061,1278 1059,1282 1052,1287 1047,1291 1043,1294 1043,1301 1042,1307 1038,1311 1034,1314 1030,1315 1026,1318 1022,1316 1018,1314 1015,1311 1016,1305 1020,1299 1022,1295 1019,1292 1015,1290 1011,1288 1015,1284 1019,1285 1024,1288 1031,1288 1035,1283 1037,1279 1038,1275 1035,1270 1031,1265 1026,1264 1023,1261 1018,1259 1015,1263 1013,1268 1017,1270 1021,1273 1018,1277 1015,1280 1009,1279 1005,1277 1001,1275 997,1274 992,1270 989,1266 984,1264 981,1260 978,1257 973,1258 978,1260 980,1265 981,1269 986,1273 982,1272 980,1277 977,1281 973,1281 970,1284 968,1288 965,1292 963,1296 965,1300 966,1304 968,1309 972,1308 975,1305 974,1300 980,1301 982,1297 982,1292 979,1295 979,1291 982,1286 986,1285 993,1286 999,1284 993,1293 994,1297 995,1302 991,1304 985,1305 980,1308 976,1306 973,1310 976,1313 972,1315 970,1311 966,1313 965,1317 960,1321 955,1323 957,1327 957,1332 958,1337 962,1336 967,1340 968,1336 974,1337 981,1335 982,1330 985,1335 986,1339 982,1343 980,1347 984,1345 984,1351 985,1355 989,1354 994,1353 995,1349 997,1345 1002,1345 1005,1349 1009,1351 1013,1352 1017,1353 1013,1354 1009,1357 1013,1359 1016,1363 1020,1364 1024,1364 1027,1361 1029,1357 1032,1360 1036,1360 1040,1362 1040,1367 1036,1365 1032,1365 1029,1368 1034,1366 1039,1368 1043,1371 1047,1374 1046,1378 1047,1382 1050,1385 1054,1387 1061,1388 1065,1390 1068,1393 1072,1394 1079,1394 1083,1394 1087,1391 1091,1389 1094,1392 1098,1396 1102,1396 1101,1392 1100,1387 1096,1383 1101,1381 1101,1375 1105,1368 1108,1364 1112,1363 1119,1362 1126,1360 1132,1358 1137,1357 1142,1358 1146,1362 1150,1367 1155,1368 1161,1368 1165,1367 1169,1364 1171,1360 1174,1356 1173,1351 1173,1346 1171,1341 1167,1342 1164,1339 1160,1337 1156,1335 1151,1336 1151,1327 1155,1326 1161,1325 1166,1327 1170,1325 1176,1325 1182,1324 1189,1327 1187,1321 1183,1317 1181,1313 1187,1313 1186,1308 1191,1308 1196,1307 1200,1309 1201,1305 1195,1305 1191,1301 1194,1296 1198,1295 1202,1293 1206,1295 1203,1292 1199,1290 1198,1285 1200,1281 1196,1279 1188,1278 1187,1274 1186,1270 1182,1270 1179,1266 1177,1262 1173,1258 1168,1253 1172,1251 1169,1247|1469,1383 1474,1384 1470,1381 1466,1380 1462,1378 1458,1376 1455,1373 1446,1367 1441,1365 1436,1360 1431,1357 1430,1353 1424,1346 1421,1338 1420,1331 1419,1327 1414,1329 1408,1334 1404,1338 1402,1342 1397,1344 1393,1349 1385,1350 1376,1352 1367,1353 1361,1352 1355,1349 1347,1345 1346,1341 1342,1339 1337,1339 1333,1335 1329,1337 1325,1333 1326,1328 1325,1322 1321,1319 1316,1314 1313,1309 1310,1305 1305,1304 1300,1299 1299,1295 1301,1290 1299,1286 1295,1285 1297,1281 1301,1277 1303,1272 1298,1272 1296,1276 1292,1278 1288,1275 1284,1276 1279,1274 1273,1277 1266,1278 1263,1275 1262,1280 1265,1283 1269,1288 1264,1291 1258,1293 1254,1293 1252,1289 1247,1293 1248,1297 1248,1302 1244,1304 1240,1302 1241,1307 1245,1305 1247,1309 1249,1313 1245,1314 1244,1319 1239,1320 1245,1320 1249,1317 1252,1321 1254,1326 1250,1327 1252,1331 1242,1330 1238,1332 1242,1335 1239,1338 1241,1342 1238,1347 1234,1346 1228,1345 1221,1342 1215,1339 1212,1336 1207,1337 1203,1334 1205,1338 1209,1341 1213,1342 1217,1345 1222,1345 1226,1346 1229,1349 1241,1354 1244,1357 1247,1360 1250,1363 1260,1366 1265,1369 1268,1372 1270,1376 1269,1381 1270,1385 1271,1390 1276,1391 1277,1396 1280,1401 1285,1404 1292,1407 1293,1411 1298,1411 1303,1405 1306,1399 1309,1395 1313,1393 1317,1394 1321,1395 1325,1397 1330,1398 1334,1399 1342,1399 1349,1397 1355,1398 1359,1402 1362,1405 1365,1413 1364,1418 1360,1422 1356,1426 1361,1424 1367,1422 1373,1425 1378,1429 1384,1431 1388,1434 1391,1437 1395,1438 1399,1436 1404,1435 1408,1435 1412,1436 1415,1439 1416,1433 1421,1435 1426,1433 1430,1428 1434,1425 1440,1425 1444,1421 1450,1422 1456,1422 1461,1425 1459,1421 1463,1423 1461,1418 1462,1414 1460,1408 1459,1404 1460,1400 1464,1401 1466,1397 1470,1395 1470,1391 1467,1388 1472,1385|1307,1613 1305,1609 1304,1605 1301,1608 1299,1604 1295,1606 1302,1611 1306,1612|1342,1445 1334,1435 1330,1432 1326,1433 1330,1434 1328,1438 1327,1442 1323,1438 1320,1435 1321,1431 1318,1428 1312,1428 1309,1425 1307,1432 1311,1435 1317,1435 1313,1438 1309,1439 1308,1435 1302,1432 1291,1431 1285,1429 1280,1428 1276,1427 1277,1423 1273,1423 1266,1420 1262,1421 1257,1419 1255,1423 1252,1427 1251,1431 1253,1435 1248,1435 1240,1437 1235,1435 1231,1433 1222,1424 1224,1420 1224,1414 1220,1411 1220,1406 1221,1399 1218,1396 1214,1395 1213,1391 1216,1386 1211,1381 1205,1378 1208,1383 1211,1386 1208,1389 1199,1391 1194,1395 1190,1397 1185,1400 1181,1397 1182,1402 1174,1406 1170,1404 1164,1403 1160,1404 1159,1399 1155,1400 1151,1401 1147,1403 1146,1399 1142,1399 1140,1403 1136,1399 1133,1396 1127,1393 1123,1393 1119,1394 1117,1398 1112,1400 1107,1404 1101,1402 1097,1397 1093,1395 1092,1391 1088,1394 1091,1397 1092,1401 1091,1405 1087,1408 1087,1413 1091,1415 1092,1419 1090,1424 1087,1428 1089,1433 1093,1435 1100,1437 1096,1440 1097,1444 1101,1441 1105,1442 1110,1441 1114,1438 1118,1438 1117,1442 1121,1443 1125,1444 1128,1441 1124,1442 1121,1438 1128,1438 1132,1439 1136,1442 1141,1442 1142,1447 1146,1449 1148,1453 1152,1455 1155,1458 1157,1462 1160,1466 1166,1465 1171,1467 1175,1468 1179,1469 1184,1471 1187,1475 1193,1479 1200,1484 1203,1488 1206,1491 1211,1494 1216,1498 1222,1501 1227,1504 1232,1506 1236,1511 1239,1514 1241,1518 1247,1521 1253,1524 1258,1527 1262,1529 1266,1533 1267,1537 1265,1541 1268,1545 1274,1545 1277,1548 1284,1551 1292,1551 1297,1552 1302,1554 1305,1557 1309,1559 1314,1557 1319,1557 1323,1558 1327,1557 1331,1558 1327,1555 1326,1551 1329,1548 1333,1547 1338,1546 1344,1549 1349,1551 1353,1552 1358,1553 1363,1552 1373,1550 1391,1551 1401,1554 1418,1554 1424,1555 1428,1557 1434,1559 1438,1561 1447,1564 1454,1567 1459,1566 1465,1566 1477,1567 1481,1566 1486,1566 1490,1565 1495,1565 1499,1569 1505,1570 1509,1573 1513,1575 1518,1576 1523,1577 1526,1574 1529,1571 1531,1567 1526,1566 1524,1562 1520,1559 1519,1555 1523,1558 1527,1557 1524,1554 1530,1551 1532,1547 1537,1549 1534,1554 1540,1556 1544,1558 1548,1556 1549,1552 1553,1549 1558,1550 1563,1553 1562,1549 1570,1549 1574,1550 1571,1554 1574,1557 1578,1555 1583,1553 1580,1557 1586,1558 1583,1561 1587,1562 1591,1561 1595,1563 1597,1568 1596,1573 1602,1576 1604,1572 1603,1568 1607,1566 1608,1570 1609,1574 1610,1578 1607,1583 1601,1587 1600,1591 1597,1596 1596,1600 1600,1602 1602,1606 1604,1611 1609,1616 1612,1620 1612,1625 1620,1626 1628,1632 1635,1637 1643,1643 1664,1666 1669,1673 1676,1687 1677,1691 1676,1695 1676,1700 1673,1705 1673,1713 1668,1714 1667,1718 1669,1722 1673,1727 1672,1732 1675,1736 1679,1737 1684,1740 1688,1741 1694,1740 1704,1745 1709,1747 1726,1752 1730,1753 1734,1752 1735,1748 1733,1744 1729,1744 1725,1743 1724,1738 1726,1734 1724,1730 1717,1730 1711,1728 1707,1724 1703,1720 1698,1720 1696,1724 1693,1721 1689,1717 1689,1712 1686,1708 1691,1708 1696,1705 1702,1710 1706,1708 1705,1702 1706,1697 1703,1694 1699,1687 1705,1681 1713,1678 1720,1676 1724,1676 1730,1676 1735,1678 1739,1683 1742,1688 1743,1692 1750,1696 1759,1697 1768,1699 1781,1703 1790,1706 1800,1711 1805,1713 1810,1717 1816,1716 1821,1717 1833,1723 1844,1732 1855,1738 1860,1743 1862,1748 1866,1752 1872,1756 1875,1760 1881,1776 1883,1780 1886,1783 1893,1788 1906,1795 1913,1796 1922,1799 1931,1804 1941,1813 1943,1817 1946,1838 1949,1845 1953,1851 1958,1861 1960,1865 1963,1868 1972,1874 1975,1878 1977,1882 1982,1894 1986,1903 1987,1910 1990,1915 1990,1922 1992,1926 1996,1930 2000,1933 2002,1941 2005,1950 2006,1970 2004,1977 2003,1982 2000,1985 1997,1988 1992,1990 1988,1989 1985,1986 1976,1986 1973,1990 1970,1995 1970,2001 1974,1998 1980,1996 1987,1998 1990,2002 1998,2013 1999,2017 2000,2022 2002,2033 2001,2037 1996,2040 1994,2044 1995,2048 1994,2052 1993,2056 1988,2058 1988,2063 1992,2065 1996,2068 1999,2072 2005,2077 2009,2075 2014,2075 2020,2079 2024,2078 2027,2081 2030,2087 2031,2094 2032,2098 2032,2103 2035,2100 2038,2103 2034,2105 2030,2111 2025,2112 2030,2114 2033,2117 2033,2124 2038,2124 2044,2120 2048,2118 2053,2122 2059,2122 2063,2120 2064,2114 2063,2109 2064,2104 2067,2090 2070,2085 2075,2084 2080,2084 2083,2087 2087,2091 2087,2095 2088,2101 2094,2099 2098,2096 2101,2093 2105,2091 2109,2088 2113,2087 2118,2091 2123,2099 2124,2108 2125,2112 2128,2115 2126,2121 2123,2124 2118,2128 2114,2126 2111,2121 2107,2120 2103,2119 2098,2120 2095,2117 2089,2116 2083,2115 2077,2114 2077,2120 2078,2124 2079,2128 2080,2132 2082,2136 2084,2142 2089,2147 2091,2151 2095,2152 2099,2149 2107,2148 2111,2146 2114,2143 2118,2141 2123,2137 2127,2135 2132,2135 2138,2137 2143,2141 2147,2143 2145,2139 2144,2135 2142,2131 2141,2126 2140,2122 2139,2116 2139,2110 2139,2103 2139,2098 2139,2093 2140,2082 2142,2073 2144,2067 2147,2059 2152,2054 2158,2054 2162,2050 2168,2045 2172,2041 2175,2037 2177,2033 2180,2029 2183,2025 2184,2021 2181,2018 2185,2017 2188,2014 2185,2011 2184,2007 2192,2001 2195,1997 2194,1993 2197,1989 2198,1985 2200,1978 2201,1974 2198,1971 2198,1966 2196,1961 2201,1964 2204,1961 2206,1956 2205,1952 2202,1949 2197,1947 2202,1946 2206,1947 2204,1942 2200,1941 2195,1939 2193,1935 2197,1934 2192,1930 2190,1926 2195,1925 2193,1921 2188,1921 2193,1919 2189,1916 2184,1915 2191,1911 2184,1910 2187,1906 2182,1906 2185,1903 2177,1903 2173,1904 2174,1900 2171,1897 2167,1898 2165,1892 2167,1887 2163,1889 2159,1888 2159,1883 2153,1878 2155,1874 2157,1870 2153,1869 2149,1868 2153,1864 2152,1860 2147,1857 2150,1854 2154,1853 2154,1848 2150,1847 2147,1844 2148,1840 2152,1840 2153,1836 2154,1830 2149,1829 2146,1833 2144,1837 2140,1838 2135,1840 2130,1841 2123,1839 2118,1837 2117,1832 2113,1837 2108,1836 2105,1833 2108,1830 2102,1825 2099,1821 2097,1817 2093,1805 2092,1801 2092,1796 2093,1789 2096,1785 2099,1780 2100,1776 2102,1771 2101,1767 2104,1738 2102,1727 2101,1723 2101,1713 2099,1709 2098,1700 2093,1694 2089,1693 2084,1691 2080,1689 2079,1684 2075,1678 2069,1662 2064,1654 2061,1643 2062,1638 2058,1630 2057,1625 2058,1616 2061,1610 2064,1601 2079,1581 2083,1576 2086,1573 2080,1571 2072,1568 2066,1569 2060,1565 2048,1557 2042,1549 2039,1538 2041,1533 2040,1526 2039,1520 2035,1518 2033,1514 2028,1513 2024,1511 2020,1511 2015,1512 2010,1510 2008,1506 2002,1504 1998,1501 1996,1496 1994,1492 1990,1490 1984,1490 1982,1494 1978,1495 1975,1498 1979,1497 1983,1499 1987,1500 1983,1503 1985,1507 1984,1513 1982,1517 1985,1521 1987,1525 1985,1529 1981,1531 1982,1535 1985,1538 1989,1536 1990,1542 1994,1544 1998,1546 2002,1549 2007,1554 2010,1557 2006,1562 2001,1566 1995,1567 1991,1562 1987,1563 1982,1562 1977,1562 1978,1558 1980,1554 1978,1550 1974,1548 1969,1546 1964,1545 1968,1544 1969,1540 1965,1541 1965,1534 1965,1530 1969,1527 1973,1526 1973,1521 1967,1519 1968,1515 1964,1514 1961,1517 1963,1521 1960,1524 1957,1527 1954,1531 1949,1530 1941,1532 1933,1530 1928,1530 1923,1529 1918,1526 1915,1523 1914,1518 1916,1514 1912,1515 1909,1511 1907,1505 1911,1505 1910,1501 1913,1497 1915,1491 1914,1487 1910,1486 1907,1481 1904,1477 1900,1473 1898,1468 1894,1466 1889,1463 1883,1460 1879,1463 1877,1467 1875,1471 1876,1475 1875,1481 1876,1485 1878,1491 1877,1496 1878,1500 1883,1502 1888,1502 1886,1508 1880,1512 1874,1513 1870,1514 1866,1513 1859,1511 1855,1510 1853,1505 1850,1500 1847,1496 1843,1494 1837,1492 1834,1487 1833,1481 1829,1476 1825,1474 1821,1471 1820,1466 1823,1462 1819,1460 1805,1466 1797,1467 1789,1467 1779,1464 1769,1467 1760,1468 1755,1468 1743,1467 1734,1465 1714,1459 1709,1459 1704,1458 1705,1465 1710,1464 1714,1465 1720,1467 1724,1470 1728,1473 1730,1469 1731,1473 1733,1477 1730,1480 1725,1481 1721,1480 1717,1476 1714,1479 1709,1478 1703,1478 1699,1481 1696,1486 1698,1490 1694,1486 1691,1478 1694,1475 1697,1471 1691,1471 1686,1474 1685,1479 1686,1484 1683,1487 1682,1492 1683,1497 1686,1501 1688,1507 1685,1504 1684,1508 1684,1503 1680,1505 1675,1503 1668,1500 1665,1497 1664,1493 1662,1485 1657,1480 1653,1476 1652,1470 1653,1466 1654,1462 1661,1460 1665,1458 1668,1455 1675,1451 1680,1449 1685,1449 1688,1445 1693,1442 1692,1438 1688,1437 1689,1432 1690,1428 1685,1425 1680,1425 1684,1426 1685,1431 1681,1430 1677,1431 1673,1429 1672,1433 1665,1431 1662,1428 1657,1428 1653,1427 1652,1423 1647,1424 1643,1421 1639,1420 1634,1418 1630,1415 1632,1411 1629,1408 1625,1411 1622,1407 1625,1404 1628,1401 1627,1397 1623,1399 1623,1394 1617,1392 1614,1389 1607,1385 1602,1373 1599,1369 1598,1365 1594,1362 1595,1358 1591,1355 1583,1351 1578,1347 1576,1343 1577,1347 1567,1349 1549,1354 1545,1355 1541,1357 1539,1361 1537,1365 1533,1367 1538,1370 1534,1375 1529,1376 1523,1378 1520,1381 1517,1384 1515,1388 1510,1389 1506,1388 1508,1392 1510,1396 1513,1400 1516,1403 1513,1406 1509,1407 1512,1410 1515,1414 1519,1415 1517,1419 1514,1423 1509,1426 1510,1432 1521,1434 1526,1438 1532,1443 1535,1447 1537,1451 1541,1454 1542,1461 1540,1466 1536,1469 1532,1471 1529,1468 1522,1469 1524,1465 1520,1468 1511,1464 1505,1462 1498,1464 1494,1467 1489,1469 1483,1472 1476,1476 1470,1478 1457,1477 1453,1476 1449,1477 1443,1473 1439,1474 1435,1472 1428,1472 1422,1473 1428,1470 1424,1469 1421,1466 1417,1465 1418,1461 1411,1459 1407,1459 1403,1461 1398,1461 1394,1459 1400,1459 1405,1458 1402,1454 1398,1453 1396,1447 1386,1446 1382,1446 1377,1449 1373,1451 1369,1452 1364,1450 1360,1448 1355,1446 1347,1442 1351,1446 1347,1448 1343,1447|2577,2339 2581,2338 2576,2334 2571,2333 2567,2331 2562,2330 2558,2327 2556,2322 2552,2318 2548,2317 2544,2318 2530,2317 2526,2315 2516,2313 2512,2311 2515,2308 2511,2306 2508,2303 2500,2304 2503,2301 2493,2298 2487,2299 2484,2302 2481,2305 2477,2303 2474,2299 2476,2295 2460,2295 2452,2294 2446,2294 2439,2296 2436,2299 2432,2300 2418,2298 2404,2293 2389,2284 2379,2276 2364,2266 2357,2260 2345,2245 2335,2232 2333,2228 2333,2223 2334,2217 2333,2211 2330,2203 2327,2199 2325,2194 2320,2195 2316,2199 2311,2203 2296,2211 2276,2216 2255,2225 2246,2227 2228,2237 2222,2241 2217,2246 2206,2247 2198,2251 2193,2256 2189,2257 2182,2260 2172,2262 2164,2262 2155,2260 2143,2256 2126,2247 2122,2244 2117,2243 2109,2239 2102,2232 2098,2230 2094,2232 2098,2233 2093,2237 2090,2242 2073,2256 2069,2258 2060,2257 2053,2258 2046,2256 2042,2254 2038,2251 2032,2243 2030,2239 2029,2235 2028,2230 2029,2226 2032,2223 2042,2219 2046,2217 2053,2211 2061,2212 2067,2212 2071,2213 2077,2210 2084,2202 2089,2199 2098,2191 2103,2189 2108,2188 2118,2182 2114,2179 2104,2172 2096,2172 2087,2176 2082,2177 2077,2177 2073,2175 2073,2181 2068,2183 2064,2181 2062,2175 2054,2171 2047,2169 2043,2164 2044,2156 2040,2151 2027,2148 2023,2144 2021,2140 2014,2142 2010,2141 2006,2143 2003,2146 2001,2150 1998,2156 1999,2160 2002,2170 2007,2176 2008,2180 2013,2181 2013,2186 2015,2191 2014,2195 2011,2201 2006,2208 2003,2211 1993,2214 1990,2217 1987,2220 1980,2224 1977,2231 1978,2235 1983,2240 1985,2247 1983,2259 1985,2263 1988,2266 1992,2268 2001,2268 2005,2269 2010,2273 2014,2275 2017,2280 2022,2280 2026,2276 2030,2277 2031,2282 2035,2285 2038,2289 2046,2296 2050,2298 2053,2302 2050,2305 2044,2313 2041,2316 2037,2318 2034,2321 2033,2325 2036,2332 2041,2332 2045,2334 2049,2337 2054,2335 2062,2330 2067,2326 2076,2322 2080,2320 2091,2320 2099,2323 2100,2319 2107,2317 2111,2316 2116,2314 2123,2315 2130,2320 2137,2325 2140,2328 2142,2332 2144,2336 2144,2341 2137,2350 2136,2354 2139,2358 2137,2362 2134,2369 2136,2375 2139,2379 2143,2381 2149,2383 2153,2384 2158,2387 2162,2390 2164,2394 2166,2398 2167,2403 2166,2428 2175,2442 2179,2460 2180,2464 2178,2476 2175,2488 2172,2496 2159,2516 2157,2521 2158,2525 2161,2528 2163,2532 2165,2536 2164,2540 2165,2544 2169,2541 2177,2541 2182,2542 2186,2544 2188,2548 2192,2552 2196,2551 2199,2547 2206,2540 2210,2537 2218,2533 2222,2530 2254,2502 2261,2490 2266,2487 2271,2481 2291,2465 2298,2459 2304,2456 2312,2450 2320,2445 2324,2444 2328,2441 2334,2439 2337,2435 2341,2432 2355,2425 2378,2419 2369,2419 2372,2415 2373,2411 2377,2410 2393,2410 2397,2412 2412,2413 2417,2411 2413,2408 2410,2403 2414,2402 2418,2404 2420,2408 2424,2412 2426,2408 2428,2404 2432,2399 2438,2396 2443,2394 2457,2393 2474,2392 2479,2392 2483,2394 2495,2403 2504,2411 2512,2416 2517,2419 2525,2427 2529,2430 2532,2434 2537,2430 2537,2425 2535,2421 2529,2416 2527,2409 2517,2398 2514,2395 2510,2388 2511,2384 2509,2380 2507,2376 2512,2369 2519,2362 2522,2359 2523,2355 2525,2351 2529,2341 2531,2337 2535,2333 2539,2331 2530,2334 2526,2334 2530,2331 2535,2327 2547,2325 2552,2323 2550,2327 2554,2330 2558,2334 2562,2335 2566,2338 2572,2338 2576,2339|381,439 387,439 391,438 394,434 387,426 375,428 368,429 371,433 375,433 375,437 377,441 381,439|433,458 431,454 428,449 426,445 425,440 424,436 418,433 414,434 414,439 411,442 412,447 416,444 420,444 423,448 427,451 430,457|539,478 543,477 542,473 538,473 530,473 526,475 527,482 528,486 532,483 536,478|834,680 833,676 831,672 826,665 822,663 817,662 813,659 814,655 809,654 804,653 798,648 795,645 787,645 784,642 787,639 788,635 791,632 786,632 778,623 777,619 781,619 780,614 776,612 772,609 765,608 766,612 764,619 768,623 770,628 774,631 772,639 773,644 778,644 783,648 786,651 790,652 794,653 796,658 789,661 788,669 792,670 797,670 800,667 800,663 806,664 811,667 815,673 818,676 822,680 825,686 833,681|870,746 867,742 864,738 860,736 856,735 853,738 854,742 860,741 865,743 870,746|899,781 903,777 900,773 898,769 893,769 889,773 890,777 888,782 889,789 895,791 898,784|930,812 935,811 932,808 927,808 923,810 921,814 918,819 923,819 927,817 926,813 930,812|1003,837 1002,833 1000,829 996,828 991,830 997,834 1002,837|971,846 968,842 964,841 961,838 955,833 950,829 945,829 943,825 947,821 942,819 939,816 938,812 934,815 929,818 928,822 924,821 917,824 921,826 927,826 924,829 926,833 930,834 933,837 938,837 943,839 947,840 952,839 953,843 962,848 963,843 968,848|1068,1037 1065,1029 1060,1025 1055,1023 1049,1023 1044,1024 1041,1029 1039,1034 1038,1039 1042,1040 1046,1044 1050,1047 1057,1044 1060,1041 1064,1040 1068,1037|1105,1084 1107,1080 1107,1074 1108,1070 1105,1066 1106,1061 1104,1057 1100,1055 1098,1050 1097,1046 1098,1040 1094,1037 1089,1036 1087,1040 1085,1044 1088,1048 1093,1054 1095,1059 1095,1064 1095,1069 1099,1073 1101,1077 1103,1082|1041,1251 1046,1253 1043,1249 1039,1240 1034,1242 1028,1241 1024,1240 1021,1244 1025,1247 1029,1250 1034,1251 1038,1252|1016,1255 1019,1252 1020,1248 1020,1240 1020,1235 1016,1231 1013,1227 1007,1222 1001,1219 1001,1225 996,1224 1000,1228 1004,1229 999,1231 997,1236 1000,1239 1001,1244 1003,1248 1000,1253 1004,1252 1008,1253 1012,1254 1016,1255|888,1267 882,1263 878,1265 880,1261 877,1257 874,1260 866,1260 862,1261 861,1265 865,1267 865,1272 864,1276 868,1278 870,1274 874,1276 878,1278 883,1276 884,1270 888,1267|1979,1314 1984,1312 1988,1309 1985,1305 1980,1305 1974,1312 1977,1315|910,1299 917,1301 916,1296 912,1294 909,1291 910,1287 906,1285 904,1290 902,1294 898,1295 902,1298 905,1304 908,1308 910,1312 911,1317 911,1312 911,1307 910,1302|956,1341 956,1335 953,1332 950,1328 945,1320 941,1318 936,1318 940,1319 938,1323 942,1324 941,1328 944,1332 950,1336 954,1338|978,1377 974,1374 972,1370 968,1373 965,1376 969,1377 966,1380 968,1385 977,1384 977,1380|1223,1387 1220,1390 1223,1395 1228,1394 1232,1390 1238,1392 1243,1394 1244,1390 1239,1390 1238,1386 1234,1384 1233,1388 1229,1388 1224,1386|1256,1407 1248,1408 1250,1412 1251,1417 1255,1417 1255,1412 1257,1408|1300,1421 1295,1420 1299,1423 1299,1427 1303,1430 1306,1424 1303,1421|931,1428 935,1429 932,1426 931,1422 930,1418 928,1413 925,1410 920,1411 917,1415 917,1420 919,1425 920,1432 923,1429 928,1431 931,1428|1500,1461 1503,1458 1500,1455 1499,1450 1493,1445 1490,1442 1490,1437 1492,1432 1495,1429 1491,1426 1486,1424 1480,1420 1475,1419 1470,1422 1466,1427 1468,1433 1480,1445 1484,1447 1487,1450 1492,1455 1496,1458 1500,1461|945,1462 948,1459 946,1455 940,1448 938,1442 939,1437 938,1432 934,1430 930,1432 934,1433 930,1434 931,1439 929,1435 923,1436 927,1437 928,1441 930,1445 929,1449 933,1454 929,1456 931,1460 932,1465 936,1465 941,1468 945,1470 949,1468 949,1463 945,1462|1942,1478 1946,1474 1946,1469 1942,1468 1936,1470 1935,1477 1940,1479|1337,1627 1338,1621 1334,1620 1334,1616 1328,1616 1320,1620 1320,1628 1329,1634 1333,1631 1337,1628|1846,1807 1854,1808 1857,1804 1852,1796 1850,1791 1837,1783 1826,1780 1821,1781 1827,1784 1829,1791 1833,1795 1832,1800 1825,1798 1823,1803 1824,1807 1829,1814 1833,1818 1840,1824 1847,1831 1851,1832 1851,1824 1849,1818 1844,1810 1844,1805|1955,2224 1952,2217 1951,2212 1949,2208 1946,2205 1943,2208 1942,2212 1941,2217 1944,2221 1949,2222 1954,2224|2531,2359 2535,2358 2531,2354 2527,2352 2532,2356 2520,2361 2529,2360|2133,2517 2131,2512 2127,2510 2123,2510 2118,2513 2113,2517 2117,2524 2123,2524 2127,2523 2133,2517|2105,2545 2106,2532 2104,2526 2101,2533 2099,2537 2100,2542 2097,2546 2101,2544 2105,2545|1437,1455 1437,1448 1435,1443 1430,1445 1426,1442 1424,1446 1420,1447 1416,1448 1418,1452 1423,1452 1427,1454 1432,1455 1436,1455";
+const JM={view:null,goal:null,a:{},ta:{},r:{},tr:{},focus:null,raf:0,cv:null,ctx:null,land:null,K:Math.cos(36*Math.PI/180),full:{x0:128.6,x1:146.2,y0:30.4,y1:45.8}};
+function drawMap(){
+  JM.cv=$('jmap'); JM.ctx=JM.cv.getContext('2d');
+  JM.land=JP.split('|').map(p=>p.split(' ').map(q=>{const [x,y]=q.split(',').map(Number);return [(x+12000)/100,(y+2000)/100];}));
+  JM.view={...JM.full}; JM.goal={...JM.full};
+  for(const sid of Object.keys(D.schools)){ JM.a[sid]=JM.ta[sid]=.6; JM.r[sid]=JM.tr[sid]=1.6; }
+  mapKick();
+}
+function mapKick(){ if(!JM.raf) JM.raf=requestAnimationFrame(mapFrame); }
+function mapFrame(){
+  JM.raf=0; const cv=JM.cv, ctx=JM.ctx; if(!cv) return;
+  const dpr=window.devicePixelRatio||1, bw=cv.clientWidth, bh=cv.clientHeight;
+  if(cv.width!==Math.round(bw*dpr)){ cv.width=Math.round(bw*dpr); cv.height=Math.round(bh*dpr); }
+  let moving=false; const v=JM.view,gl=JM.goal;
+  for(const k in v){ const d=gl[k]-v[k]; if(Math.abs(d)>1e-4){ v[k]+=d*.08; moving=true; } else v[k]=gl[k]; }
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,bw,bh);
+  const K=JM.K, s=Math.min(bw/((v.x1-v.x0)*K), bh/(v.y1-v.y0));
+  const ox=(bw-(v.x1-v.x0)*K*s)/2, oy=(bh-(v.y1-v.y0)*s)/2;
+  const P=(lo,la)=>[ox+(lo-v.x0)*K*s, oy+(v.y1-la)*s];
+  ctx.fillStyle='#2c3d47'; ctx.strokeStyle='#4f6673'; ctx.lineWidth=1;
+  for(const ring of JM.land){ ctx.beginPath(); ring.forEach((c,i)=>{ const [x,y]=P(c[0],c[1]); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+  const zr=Math.min(2.2, Math.sqrt(s/40));
+  for(const [sid,sc] of Object.entries(D.schools)){
+    const da=JM.ta[sid]-JM.a[sid], dr=JM.tr[sid]-JM.r[sid];
+    if(Math.abs(da)>.005||Math.abs(dr)>.02){ JM.a[sid]+=da*.1; JM.r[sid]+=dr*.1; moving=true; }
+    const a=JM.a[sid]; if(a<.03) continue;
+    const [x,y]=P(sc.lon,sc.lat); if(x<-10||y<-10||x>bw+10||y>bh+10) continue;
+    ctx.globalAlpha=a; ctx.fillStyle = sid===JM.focus ? '#ff8a3d' : '#f0e2be';
+    ctx.beginPath(); ctx.arc(x,y,JM.r[sid]*zr,0,6.283); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  if(moving) mapKick();
+}
+function updateMap(showLabels){
+  const m=Object.fromEntries(E.schoolMarg(D,g.post));
+  const mx=Math.max(...Object.values(m),1e-12);
+  const top=Object.entries(m).sort((a,b)=>b[1]-a[1])[0];
+  JM.focus = showLabels && top ? top[0] : null;
+  let x0=999,x1=-999,y0=999,y1=-999,cnt=0;
+  for(const [sid,sc] of Object.entries(D.schools)){
+    const p=(m[sid]||0)/mx, ex=g.excluded&&g.excluded.has(sid);
+    JM.ta[sid] = ex ? .04 : (JM.focus ? (sid===JM.focus?1:.12) : .1+.9*Math.sqrt(p));
+    JM.tr[sid] = sid===JM.focus ? 6 : 1.2+3.5*Math.sqrt(p);
+    if(!ex && p>.08){ cnt++; x0=Math.min(x0,sc.lon); x1=Math.max(x1,sc.lon); y0=Math.min(y0,sc.lat); y1=Math.max(y1,sc.lat); }
+  }
+  if(JM.focus){ const sc=D.schools[JM.focus]; x0=x1=sc.lon; y0=y1=sc.lat; cnt=1; }
+  if(cnt && (x1-x0)<14){ const cxm=(x0+x1)/2, cym=(y0+y1)/2, w=Math.max(.35,(x1-x0)*1.3), h=Math.max(.3,(y1-y0)*1.3);
+    JM.goal={x0:cxm-w/2,x1:cxm+w/2,y0:cym-h/2,y1:cym+h/2}; } else JM.goal={...JM.full};
+  mapKick();
+  const box=$('aruBox');
+  const mine=(JM.focus && (typeof ARU_ALL!=='undefined') && ARU_ALL[JM.focus]) || [];
+  if(JM.focus && ((D.words[JM.focus] && D.words[JM.focus].length) || mine.length)){
+    $('aruName').textContent=D.schools[JM.focus].name.replace(/（.*/,'');
+    // みんなが書いたあるある（確定したもの）を先に、色を変えて出す
+    const seen=new Set(), ws=[];
+    mine.forEach(w=>{ if(!seen.has(w)){ seen.add(w); ws.push(['u',w]); } });
+    (D.words[JM.focus]||[]).forEach(w=>{ const t=w.replace(/^\*/,''); if(!seen.has(t)){ seen.add(t); ws.push(['d',t]); } });
+    const ws2=ws.slice(0,12), n=ws2.length, fs=n<=4?21:n<=6?18:n<=9?15:13;
+    $('aruList').style.fontSize=fs+'px'; $('aruName').style.fontSize=(n<=6?28:23)+'px';
+    $('aruList').innerHTML=ws2.map(([k,w])=>'<span'+(k==='u'?' style="background:#f6e7a8"':'')+'>'+w.replace(/[<>&]/g,'')+'</span>').join('');
+    box.classList.add('on');
+  } else box.classList.remove('on');
+  const alive=Object.values(m).filter(v=>v/mx>.1).length;
+  $('maplabel').textContent = `のこり候補：およそ ${alive} 校`;
+}
+
+// ---- 画面 ----
+function show(id){ for(const s of ['s-start','s-q','s-guess','s-pick','s-end','s-rev','s-revpick','s-rank','s-watch','s-key','s-album']) $(s).classList.add('hidden');
+  try{ $('keyBtn').style.display = id==='s-start' ? 'block' : 'none'; }catch(e){}
+  $(id).classList.remove('hidden'); $(id).classList.remove('fade'); void $(id).offsetWidth; $(id).classList.add('fade'); }
+
+let lastMode='n';
+function start(){ lastMode='n'; quitFlush('前回の途中'); g=E.newGame(D); try{ g.avoid=JSON.parse(localStorage.getItem('koukou-lastq')||'[]'); }catch(e){} guesses=0; log=[]; qlog=[]; pinto=[]; gameOpen=true; updateMap(false); ask(); }
+// ---- 「ピンとくる？」：予想の手前で、いちばん有力な学校のあるあるを1つ聞く ----
+const PINTO_AT=0.5, PINTO_MAX=2;
+let pinto=[], ARU_TOP={}, ARU_ALL={};
+// 言葉の選び方：ふだんは「票でいちばん点の高い言葉」→なければ「ロジが選んだ言葉」。
+// ただし PINTO_TRY の割合で、ほかの言葉も試す（票をためて、もっと通じる言葉を見つけるため）
+const PINTO_TRY=0.2;
+function pintoWord(sid){
+  const ws=(D.words[sid]||[]).filter(w=>w && w[0]!=='*' && !w.includes(shortName(sid).replace(/高等学校|高校/,'')));
+  const nm=shortName(sid).replace(/高等学校|高校/,'');
+  let main=ARU_TOP[sid] || (D.pin||{})[sid] || null; if(main && nm && main.includes(nm)) main=null;
+  const others=ws.filter(w=>w!==main);
+  if(main && (Math.random()>=PINTO_TRY || !others.length)) return main;
+  return others.length ? others[Math.floor(Math.random()*others.length)] : main;
+}
+function pintoCheck(){
+  if(pinto.length>=PINTO_MAX) return false;
+  const t=E.top(D,g); if(t.prob<PINTO_AT || pinto.some(p=>p.sid===t.sid)) return false;
+  const w=pintoWord(t.sid); if(!w) return false;
+  const p={sid:t.sid, word:w, ans:null}; pinto.push(p);
+  curQ=null; $('qno').textContent='QUESTION '+(g.n+1)+'　ピンとくる？';
+  $('qtext').textContent=`「${w}」\nと聞いて、ピンとくる？`;
+  $('counter').textContent=`質問 ${g.n+1}`; show('s-q'); return true;
+}
+function pintoAnswer(a){
+  const p=pinto[pinto.length-1]; p.ans=a;
+  log.push(`Q${g.n+1}. 「${p.word}」ピンとくる？ → ${LABEL[a]}`);
+  E.answerSid(D,g,p.sid,a); updateMap(false);
+}
+// 言い方の切りかえ：いま残っている候補で「はい」になりやすさが半分未満なら、逆の言い方（alt）で聞く
+const FLIP={yes:'no',no:'yes',pyes:'pno',pno:'pyes',unk:'unk'};
+function yesShare(qi){ const q=D.questions[qi], p=q.p; let s=0; for(let i=0;i<p.length;i++) s+=g.post[i]*p[i]; return s; }
+function qWord(qi){ const q=D.questions[qi]; if(q.alt && yesShare(qi)<0.5) return {text:q.alt, flip:true}; return {text:q.text, flip:false}; }
+let curFlip=false;
+function showQ(qi,prefix){ const w=qWord(qi); curFlip=w.flip; $('qno').textContent=(prefix||'')+'QUESTION '+(g.n+1); $('qtext').textContent=w.text; $('counter').textContent=`質問 ${g.n+1}`; show('s-q'); }
+// 記録用の質問ID：英数字・_以外は「-」＋文字コード(36進)にする（例 堺市→-5ns-5ga）。サーバーで日本語が消されないように
+function qidSafe(id){ return String(id).replace(/[^A-Za-z0-9_]/g,c=>'-'+c.codePointAt(0).toString(36)); }
+function answerQ(a){ log.push(`Q${g.n+1}. ${$('qtext').textContent} → ${LABEL[a]}`); const ak=curFlip?FLIP[a]:a; try{ qlog.push(qidSafe(D.questions[curQ].id)+':'+ak); }catch(e){} E.answer(D,g,curQ,ak); updateMap(false); quitSave(); }
+function ask(){
+  if(E.shouldGuess(D,g) && pintoCheck()) return;
+  if(E.shouldGuess(D,g)) return guess();
+  if(E.top(D,g).prob>=PINTO_AT && g.n>=6 && pintoCheck()) return;
+  curQ=E.nextQuestion(D,g);
+  if(curQ===null) return guess();
+  showQ(curQ);
+}
+const LABEL={yes:'はい',no:'いいえ',pyes:'たぶんそう',pno:'たぶん違う',unk:'わからない'};
+document.querySelectorAll('#s-q [data-a]').forEach(b=>b.onclick=()=>{
+  const a=b.dataset.a; if(curQ===null){ pintoAnswer(a); return ask(); }
+  answerQ(a); ask();
+});
+document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('#s-q [data-a]'); if(!b||b._go) return;
+  e.stopImmediatePropagation(); e.preventDefault(); if(b._busy) return; b._busy=1;
+  const r=document.createElement('span'); r.className='chalkring'; b.appendChild(r);
+  setTimeout(()=>{ r.remove(); b._busy=0; b._go=1; b.click(); b._go=0; },280); },true);
+$('forceBtn').onclick=()=>guess();
+function guess(){
+  const t=E.top(D,g); guesses++;
+  $('gname').textContent=t.school;
+  $('gdec').textContent = t.decadeProb>.45 ? `${t.decade}に卒業、ですね？` : 'ですね？';
+  updateMap(true); show('s-guess');
+}
+$('rightBtn').onclick=()=>{ const t=E.top(D,g); end(true,t); };
+$('wrongBtn').onclick=()=>{
+  const t=E.top(D,g); E.exclude(D,g,t.sid);
+  log.push(`予想${guesses}：${t.school} → ちがう`);
+  if(guesses>=3) return pick();
+  g.n=Math.max(g.n,0); // 続けて質問
+  updateMap(false); g.forceMore=true;
+  // 追加で数問聞いてから次の予想
+  const extra=g.n+4; const loop=()=>{ if(g.n>=extra || E.nextQuestion(D,g)===null) return guess(); curQ=E.nextQuestion(D,g);
+    showQ(curQ,'もう少しだけ… ');
+    document.querySelectorAll('#s-q [data-a]').forEach(b=>b.onclick=()=>{ const a=b.dataset.a; answerQ(a); loop(); });
+  }; loop();
+};
+const REGION_NAME={"gifu": "岐阜市", "gifupref": "岐阜県（岐阜市以外）", "aichi": "愛知県", "mie": "三重県", "toyama": "富山県", "ishikawa": "石川県", "fukui": "福井県", "shiga": "滋賀県", "kyoto": "京都府", "nara": "奈良県", "wakayama": "和歌山県", "kobe": "神戸市", "hyogopref": "兵庫県（神戸市以外）", "osaka": "大阪市", "osakapref": "大阪府（大阪市以外）", "tottori": "鳥取県", "shimane": "島根県", "okayama": "岡山県", "hiroshima": "広島県", "yamaguchi": "山口県", "kagawa": "香川県", "tokushima": "徳島県", "ehime": "愛媛県", "kochi": "高知県", "fukuoka": "福岡県", "saga": "佐賀県", "nagasaki": "長崎県", "kumamoto": "熊本市", "kumamotopref": "熊本県（熊本市以外）", "oita": "大分県", "miyazaki": "宮崎県", "kagoshima": "鹿児島県", "okinawa": "沖縄県", "shizuoka": "静岡県", "nagano": "長野県", "niigata": "新潟県", "yamanashi": "山梨県", "kanagawa": "神奈川県", "tokyo": "東京都", "saitama": "埼玉県", "chiba": "千葉県", "ibaraki": "茨城県", "tochigi": "栃木県", "gunma": "群馬県", "miyagi": "宮城県", "fukushima": "福島県", "yamagata": "山形県", "iwate": "岩手県", "akita": "秋田県", "aomori": "青森県", "hokkaido": "北海道"};
+const APP_URL='https://at-works-jp.github.io/dokoko/';
+function setLine(txt){ const a=$('lineBtn'); if(a) a.href='https://line.me/R/share?text='+encodeURIComponent(txt); const x=$('xBtn'); if(x) x.href='https://x.com/intent/post?text='+encodeURIComponent(txt+'\n#どこ高 #高校あるある'); }
+const CITY_PREF={gifu:'岐阜県',kobe:'兵庫県',osaka:'大阪府',kumamoto:'熊本県'};
+function prefLabel(r){ return CITY_PREF[r] || String(REGION_NAME[r]||'').replace(/（.*）/,''); }
+function pick(reg){
+  const l=$('pickList'); l.innerHTML='';
+  if(reg===undefined){ // はずれたとき最初の画面：名前で探す＋AIが迷った学校
+    $('pickSearch').style.display=''; $('pickSearch').value='';
+    pickTop(); show('s-pick'); return;
+  }
+  $('pickSearch').style.display='none';
+  if(!reg){ // 地域を選ぶ
+    Object.entries(REGION_NAME).forEach(([r,nm])=>{ const b=document.createElement('button'); b.textContent=nm+'の高校'; b.onclick=()=>pick(r); l.appendChild(b); });
+    show('s-pick'); return;
+  }
+  Object.entries(D.schools).filter(([sid,s])=>(s.region||'gifu')===reg).sort((a,b)=>a[1].name.localeCompare(b[1].name,'ja')).forEach(([sid,s])=>{
+    const b=document.createElement('button'); b.textContent=s.name+(s.gone?'（今は無い）':''); b.onclick=()=>end(false,{school:s.name,sid}); l.appendChild(b);
+  });
+  const back=document.createElement('button'); back.className='ghost'; back.textContent='← 地域を選びなおす'; back.onclick=()=>pick(null); l.appendChild(back);
+  show('s-pick');
+}
+function end(win,t){
+  gameOpen=false; try{ localStorage.removeItem('koukou-pending'); localStorage.setItem('koukou-lastq', JSON.stringify(g.asked.map(i=>(D.questions[i]||{}).id).filter(x=>x&&!/^GEO_/.test(x)))); }catch(e){}
+  const pts = win ? Math.max(0,30-g.n) * (guesses>1?0.5:1) : 0;
+  $('endSub').textContent = win ? `${g.n}問で当てられました` : '当てられませんでした';
+  $('endName').textContent = t.school;
+  $('endPts').textContent = win ? '' : 'AIに当てられなかった！';
+  report(t.sid, t.school, g.n, guesses, win);
+  // 本当の学校がわかったので、その学校について聞いた「ピンとくる？」だけを票として送る
+  try{ pinto.filter(p=>p.sid===t.sid && p.ans && p.ans!=='unk').forEach(p=>{ if(GAS) GAS.withFailureHandler(()=>{}).voteAruaru({sid:p.sid,school:((D.schools[p.sid]||{}).name||''),text:p.word,ans:p.ans,client:clientId()}); }); }catch(e){}
+  cfmLoad(t.sid);
+  postSid=t.sid; $('postHead').textContent=`${t.school.replace(/（.*/,'')}の「あるある」を教えて！`;
+  $('postText').value=''; $('postMsg').textContent='同じあるあるが何人かから届くと、ゲームに出るようになります'; $('postBtn').disabled=false;
+
+  // 母校らしさ偏差値と、最後まで迷った学校
+  let dv=null; try{ const r=E.rashisa(D,g,t.sid); dv=E.hensachi(D, r===null?null:+r.toFixed(4)); }catch(e){}
+  const sn=t.school.replace(/（.*/,'').replace(/(高等学校|高校)$/,'')+'生';
+  if(dv===null){ $('devBox').style.display='none'; }
+  else { $('devBox').style.display=''; $('devNum').textContent=dv;
+    $('devCom').textContent = dv>=70 ? sn+'の見本' : dv>=60 ? '誰が見ても'+sn : dv>=40 ? 'よくいる'+sn : dv>=30 ? sn+'の中ではレアキャラ' : '本当に'+sn+'？'; }
+  const esc=x=>String(x).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const nm=sid=>((D.schools[sid]||{}).name||'').replace(/（.*/,'');
+  let my='';
+  try{ if(win){ const m=E.schoolMarg(D,g.post).filter(x=>x[0]!==t.sid && !g.excluded.has(x[0]));
+      my = (m[0] && m[0][1]>=0.03) ? `最後まで<b style="color:var(--ink)">${esc(nm(m[0][0]))}</b>と迷いました` : '迷わず当てました';
+    } else { const f=[...g.excluded].find(x=>x!==t.sid) || (E.schoolMarg(D,g.post).find(x=>x[0]!==t.sid)||[])[0];
+      if(f) my=`<b style="color:var(--ink)">${esc(nm(f))}</b>だと思っていました`; } }catch(e){}
+  $('mayoi').innerHTML=my;
+  try{ localStorage.setItem('koukou-last-sid', t.sid); }catch(e){}
+  const txt = '「どこ高？」\n'+tateLines(win, g.n, dv).join('\n')+'\n'+APP_URL;
+  LAST={win, n:g.n, dv, txt}; $('imgBox').style.display='none';
+  $('bokouBtn').style.display = (STAGE.openAll || bokouOk()) ? '' : 'none';
+  $('shareText').textContent=txt; setLine(txt);
+  try{ const sr=(D.schools[t.sid]||{}).region; if(sr) localStorage.setItem('koukou-pref', prefLabel(sr)); }catch(e){}
+  $('hist').innerHTML=log.map(x=>x.replace(/</g,'&lt;')).join('<br>');
+  $('counter').textContent='結果'; show('s-end');
+  document.querySelectorAll('#s-q [data-a]').forEach(b=>b.onclick=()=>{ const a=b.dataset.a; if(curQ===null){ pintoAnswer(a); return ask(); } answerQ(a); ask(); });
+}
+let postSid=null;
+function cfmLoad(sid){
+  $('cfmBox').style.display='none'; $('cfmList').innerHTML='';
+  if(!GAS||!sid) return;
+  GAS.withSuccessHandler(items=>{
+    if(!items||!items.length) return;
+    const L=$('cfmList');
+    items.forEach(it=>{
+      const d=document.createElement('div'); d.style.margin='8px 0 12px';
+      const t=document.createElement('div'); t.style.fontWeight='700'; t.style.margin='4px 0 6px'; t.textContent='『'+it.text+'』'; d.appendChild(t);
+      const bx=document.createElement('div'); bx.style.display='flex'; bx.style.gap='6px';
+      [['ある','yes'],['ない','no'],['わからない','']].forEach(([lb,v])=>{ const b=document.createElement('button'); b.className='soft'; b.style.flex='1'; b.textContent=lb;
+        b.onclick=()=>{ bx.innerHTML='<span class="small">ありがとう！</span>'; if(v) GAS.withFailureHandler(()=>{}).confirmAru({sid,row:it.row,text:it.text,ans:v,client:clientId()}); };
+        bx.appendChild(b); });
+      d.appendChild(bx); L.appendChild(d); });
+    $('cfmBox').style.display='';
+  }).withFailureHandler(()=>{}).getAruPending({sid,client:clientId()});
+}
+(function(){ const s=$('postGrad'); for(let y=2026;y>=1950;y--){ const o=document.createElement('option'); o.value=y; o.textContent=y+'年卒'; s.appendChild(o);} try{ const v=localStorage.getItem('koukou-grad'); if(v) s.value=v; }catch(e){} })();
+$('postBtn').onclick=()=>{
+  const text=$('postText').value.trim(), grad=$('postGrad').value;
+  try{ if(grad) localStorage.setItem('koukou-grad',grad); }catch(e){}
+  if(text.length<3){ $('postMsg').textContent='3文字以上で書いてください'; return; }
+  if(!GAS){ $('postMsg').textContent='（いまは送れません）'; return; }
+  $('postBtn').disabled=true; $('postMsg').textContent='送っています…';
+  GAS.withSuccessHandler(r=>{ $('postMsg').textContent = r&&r.ok ? 'ありがとう！ 届きました' : (r&&r.msg)||'送れませんでした'; if(!(r&&r.ok)) $('postBtn').disabled=false; })
+     .withFailureHandler(()=>{ $('postMsg').textContent='送れませんでした'; $('postBtn').disabled=false; })
+     .postAruaru({sid:postSid,school:D.schools[postSid].name,text,grad,client:clientId()});
+};
+// ---- 結果を画像でシェア（校名は出さない） ----
+let LAST=null;
+function logShare(kind){ try{ if(GAS) GAS.withFailureHandler(()=>{}).logShare({kind,client:clientId(),win:LAST&&LAST.win,n:LAST&&LAST.n}); }catch(e){} }
+['lineBtn','xBtn'].forEach(id=>{ const b=document.getElementById(id); if(b) b.addEventListener('click',()=>logShare(id)); });
+function devWord(dv){ return dv>=70?'母校の見本':dv>=60?'誰が見ても母校の生徒':dv>=40?'よくいる母校の生徒':dv>=30?'母校の中ではレアキャラ':'本当に母校の生徒？'; }
+function makeImage(r){
+  const W=1200,H=630,c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d');
+  const F='"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif';
+  x.fillStyle='#f5efe4'; x.fillRect(0,0,W,H);
+  // 左：黒板
+  x.fillStyle='#22313a'; x.fillRect(0,0,520,H);
+  let s=7; const rnd=()=>{ s=(s*16807)%2147483647; return s/2147483647; };
+  for(let i=0;i<260;i++){ x.fillStyle='rgba(233,228,216,'+(0.05+rnd()*0.25)+')'; x.beginPath(); x.arc(rnd()*520,rnd()*H,0.6+rnd()*2.2,0,7); x.fill(); }
+  x.fillStyle='#e9e4d8'; x.textAlign='center';
+  x.font='900 108px '+F; x.fillText('どこ高？',260,280);
+  x.font='700 36px '+F; x.fillText('母校当てます',260,340);
+  x.strokeStyle='rgba(233,228,216,.5)'; x.lineWidth=3; x.beginPath(); x.moveTo(110,380); x.lineTo(410,380); x.stroke();
+  x.font='500 26px '+F; x.fillText('AIが質問だけで母校を当てる',260,430);
+  // 右：結果
+  x.textAlign='center'; const cx=860;
+  x.fillStyle='#7a6e62'; x.font='700 34px '+F; x.fillText(r.win?`${r.n}問で母校を当てられた`:'AIに母校を当てられなかった',cx,110);
+  if(r.dv!==null && r.dv!==undefined){
+    x.fillStyle='#2a2420'; x.font='700 40px '+F; x.fillText('母校らしさ偏差値',cx,200);
+    x.fillStyle='#c8462b'; x.font='900 210px '+F; x.fillText(String(r.dv),cx,400);
+    x.fillStyle='#2f5d62'; x.font='800 46px '+F; x.fillText(devWord(r.dv),cx,475);
+  } else {
+    x.fillStyle='#c8462b'; x.font='900 150px '+F; x.fillText(r.win?`${r.n}問`:'完敗',cx,360);
+  }
+  x.fillStyle='#7a6e62'; x.font='600 26px '+F; x.fillText('#どこ高　あなたの母校は当てられる？',cx,565);
+  return c;
+}
+$('imgShareBtn').onclick=async()=>{
+  if(!LAST) return; logShare('img');
+  const c=makeImage(LAST), url=c.toDataURL('image/png');
+  const tx=LAST.txt+'\n#どこ高 #高校あるある';
+  try{
+    const blob=await new Promise(res=>c.toBlob(res,'image/png'));
+    const file=new File([blob],'dokokou.png',{type:'image/png'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file],text:tx}); return; }
+  }catch(e){ if(e && e.name==='AbortError') return; }
+  // シェアできない環境（アプリの中のブラウザなど）では、画像を出して長押しで保存してもらう
+  $('imgOut').src=url; $('imgBox').style.display=''; $('imgBox').scrollIntoView({behavior:'smooth',block:'center'});
+  try{ await navigator.clipboard.writeText(tx); }catch(e){}
+};
+// ---- かくし要素「ぼこうへ」（シェア文の縦読み・鍵穴・母校のアルバム） ----
+let STAGE={stage:1,openAll:false};
+try{ if(GAS) GAS.withSuccessHandler(r=>{ if(r&&r.stage) STAGE=r; }).withFailureHandler(()=>{}).getStage(); }catch(e){}
+const TATE=[
+ [[n=>`かんぜんに母校を当てられた…${n}問で`,[d=>`えっ母校らしさ偏差値は${d}だって`,'えっこんなに早く当てられるとは'],'ろくに考えずに答えたのに','うちの母校も当ててみて？'],
+  ['かんぜんに母校を守りきった',[d=>`えっ母校らしさ偏差値は${d}だって`,'えっAIでも当てられないとは'],'ろくに当てられなかったAI','うちの母校は当てられる？']],
+ [[n=>`まさか${n}問で母校を当てられた`,[d=>`っていうか母校らしさ偏差値${d}って`,'っていうかAIすごすぎない？'],'てっきり外れると思ったのに','るんるんで次の人にまわします'],
+  ['まさかのAIの負け',[d=>`っていうか母校らしさ偏差値${d}って`,'っていうか母校を守りきった'],'てっきり当てられると思った','るんるんで次の人にまわします']],
+ [[n=>`あっさり${n}問で母校を当てられた`,[d=>`のぞいてみたら母校らしさ偏差値は${d}`,'のぞいてみたら母校が出てきた'],'この質問で決まったのか…','ろうかの思い出がよみがえる'],
+  ['あっさり母校を守りきった',[d=>`のぞいてみたら母校らしさ偏差値は${d}`,'のぞいてみたけど母校は出てこなかった'],'このAIでも当てられないとは','ろうかの思い出がよみがえる']],
+ [[n=>`ぼくの母校が${n}問で当てられた`,[d=>`くやしいけど母校らしさ偏差値${d}`,'くやしいけど完敗です'],'らくしょうだったらしい','のこりの人も当ててもらって'],
+  ['ぼくの母校は当てられなかった',[d=>`くやしいけど母校らしさ偏差値${d}`,'くやしそうなAIの顔が目にうかぶ'],'らくしょうではなかったらしい','のこりの人は当てられる？']],
+ [[n=>`ぼんやり答えたのに${n}問で当てられた`,[d=>`これが母校らしさ偏差値${d}の実力`,'これがAIの実力か'],'うそみたいに当てられた','へんな質問もなつかしかった'],
+  ['ぼんやり答えたら当てられなかった',[d=>`これが母校らしさ偏差値${d}の実力`,'これが母校の守りの実力'],'うそみたいに当てられない','へんな質問もなつかしかった']]];
+function tateLines(win,n,dv){
+  const st=Math.max(1,Math.min(5,STAGE.stage||1)), T=TATE[st-1][win?0:1];
+  return T.map(x=> typeof x==='function' ? x(n) : Array.isArray(x) ? (dv===null||dv===undefined ? x[1] : x[0](dv)) : x);
+}
+function bokouOk(){ try{ return !!localStorage.getItem('koukou-bokou'); }catch(e){ return false; } }
+function bokouPhrase(){ try{ return localStorage.getItem('koukou-bokou')||''; }catch(e){ return ''; } }
+function keyOpen(){
+  const b=$('kbox'); b.innerHTML='';
+  for(let i=0;i<5;i++){ const inp=document.createElement('input'); inp.maxLength=4; inp.autocomplete='off'; if(i<(STAGE.stage||1)) inp.className='lit'; b.appendChild(inp); }
+  $('kMsg').textContent=''; show('s-key');
+}
+$('keyBtn').onclick=keyOpen; try{ if(!$('s-start').classList.contains('hidden')) $('keyBtn').style.display='block'; }catch(e){}
+$('kBack').onclick=()=>home();
+$('kOpen').onclick=()=>{
+  const p=[...document.querySelectorAll('#kbox input')].map(x=>x.value.trim()).join('');
+  if(!GAS){ $('kMsg').textContent='（公開版でだけ開けます）'; return; }
+  $('kMsg').textContent='…';
+  GAS.withSuccessHandler(r=>{ if(r&&r.ok){ try{ localStorage.setItem('koukou-bokou',p||'open'); }catch(e){} albumOpen(); } else $('kMsg').textContent=(r&&r.msg)||'…まだ、ちがうみたい'; })
+     .withFailureHandler(()=>{ $('kMsg').textContent='…まだ、ちがうみたい'; }).bokouOpen({phrase:p,client:clientId()});
+};
+let alSid=null;
+function albumOpen(sid){
+  try{ alSid = sid || alSid || localStorage.getItem('koukou-last-sid'); }catch(e){}
+  $('alList').innerHTML=''; $('alPick').innerHTML=''; $('alSearch').value=''; $('alMsg').textContent=''; $('alText').value='';
+  show('s-album'); try{ $('aruBox').style.display='none'; }catch(e){}
+  if(!alSid || !D.schools[alSid]){ $('alName').textContent='あなたの母校は？'; $('alPlayers').textContent='下の欄で母校をさがしてください'; return; }
+  const nm=D.schools[alSid].name; $('alName').textContent=nm+'のアルバム';
+  $('alPlayers').textContent='読みこみ中…';
+  const known=(D.words&&D.words[alSid]||[]).filter(w=>w&&w[0]!=='*');
+  const draw=(items,players)=>{ const ul=$('alList'); ul.innerHTML='';
+    $('alPlayers').textContent= players!=null ? `この母校で遊んだ人：${players}人` : '';
+    const add=(t,sub)=>{ const li=document.createElement('li'); li.textContent=t; if(sub){ const s=document.createElement('span'); s.className='small'; s.textContent='　'+sub; li.appendChild(s);} ul.appendChild(li); };
+    (items||[]).forEach(x=>add(x.text, x.posts>1 ? `${x.posts}人` : ''));
+    known.forEach(w=>add(w,''));
+    if(!ul.children.length) add('まだ何もありません。最初の1つを残してください',''); };
+  if(!GAS){ draw([],null); return; }
+  GAS.withSuccessHandler(r=>{ if(r&&r.ok) draw(r.items,r.players); else draw([],null); }).withFailureHandler(()=>draw([],null)).getAlbum({sid:alSid,phrase:bokouPhrase(),client:clientId()});
+}
+$('bokouBtn').onclick=()=>albumOpen(postSid);
+$('alBack').onclick=()=>home();
+$('alSearch').addEventListener('input',()=>{ const q=$('alSearch').value.trim(), l=$('alPick'); l.innerHTML=''; if(!q) return; let n=0;
+  for(const [sid,s] of Object.entries(D.schools)){ if(!s.name.includes(q) && !(s.old||[]).some(x=>x.includes(q))) continue; if(++n>20) break;
+    const b=document.createElement('button'); b.textContent=s.name; b.onclick=()=>albumOpen(sid); l.appendChild(b); } });
+$('alPost').onclick=()=>{
+  const text=$('alText').value.trim(); if(!alSid){ $('alMsg').textContent='先に母校をえらんでください'; return; }
+  if(text.length<3){ $('alMsg').textContent='3文字以上で書いてください'; return; }
+  if(!GAS){ $('alMsg').textContent='（いまは送れません）'; return; }
+  $('alPost').disabled=true; $('alMsg').textContent='送っています…';
+  GAS.withSuccessHandler(r=>{ $('alMsg').textContent = r&&r.ok ? '残しました。ありがとう' : (r&&r.msg)||'送れませんでした'; $('alPost').disabled=false; })
+     .withFailureHandler(()=>{ $('alMsg').textContent='送れませんでした'; $('alPost').disabled=false; })
+     .postAruaru({sid:alSid,school:D.schools[alSid].name,text,grad:'',client:clientId()});
+};
+$('shareText').onclick=async()=>{ const m=$('copyMsg'); try{ await navigator.clipboard.writeText($('shareText').textContent); m.textContent='コピーしました'; logShare('copyBtn'); }catch(e){ m.textContent='コピーできませんでした'; } setTimeout(()=>m.textContent='タップでコピー',1800); };
+$('againBtn').onclick=()=>home();
+$('replayBtn').onclick=()=>{ if(lastMode==='r') startRev(); else start(); };
+$('startBtn').onclick=()=>start();
+
+// ---- ランキング ----
+function shortName(sid){ return D.schools[sid].name.replace(/（.*/,''); }
+const GAS_API='https://script.google.com/macros/s/AKfycbwvDe4IB8MTCbk8fFIwR8zSEFPdmAZ8S2rEXPCSkZ0zkuhaToa9XshZN86Qet4Wco77/exec';
+function gasRun_(ok,ng){ return new Proxy({},{get(_,k){ if(k==='withSuccessHandler') return f=>gasRun_(f,ng); if(k==='withFailureHandler') return f=>gasRun_(ok,f);
+  return (...a)=>{ fetch(GAS_API,{method:'POST',keepalive:true,body:JSON.stringify({fn:k,args:a})}).then(r=>r.json()).then(j=>{ if(j&&j.ok){ if(ok) ok(j.r); } else if(ng) ng(j&&j.e); }).catch(e=>{ if(ng) ng(e); }); }; }}); }
+const GAS = (typeof google!=='undefined' && google.script && google.script.run) ? google.script.run : (/^https?:/.test(location.protocol) ? gasRun_(null,null) : null);
+if(GAS){ const n=document.getElementById('privNote'); if(n) n.textContent='遊んだ結果（当てた学校・質問数・1問ごとの答え・卒業年）をAIを育てるためとランキングのために送ります。名前やメールなどの個人情報は集めません。'; }
+function clientId(){ try{ let c=localStorage.getItem('koukou-client'); if(!c){ c=Math.random().toString(36).slice(2,12); localStorage.setItem('koukou-client',c);} return c; }catch(e){ return ''; } }
+try{ if(GAS) GAS.withSuccessHandler(m=>{ if(m) ARU_TOP=m; }).withFailureHandler(()=>{}).getAruTop(); }catch(e){}
+try{ if(GAS) GAS.withSuccessHandler(m=>{ if(m) ARU_ALL=m; }).withFailureHandler(()=>{}).getAruAll(); }catch(e){}
+function report(sid,school,questions,guesses,win){
+  if(!GAS) return;
+  GAS.withSuccessHandler(r=>{ if(r&&r.ok&&win){ $('endPts').textContent = r.capped ? '今日の加点上限に達しました（遊ぶのは何回でもOK）' : `${school.replace(/（.*/,'')}に ${r.points} ポイント！`; } })
+     .withFailureHandler(()=>{}).recordResult({sid,school,questions,guesses,win,answers:qlog.join(','),client:clientId(),grad:(()=>{try{return localStorage.getItem('koukou-grad')||''}catch(e){return ''}})()});
+}
+let rankPref=null;
+function showRank(){
+  const live={};
+  try{ if(rankPref===null) rankPref=localStorage.getItem('koukou-pref')||''; }catch(e){ rankPref=''; }
+  const inPref=sid=>{ const s=D.schools[sid]; return !rankPref || (s && prefLabel(s.region)===rankPref); };
+  const tabs=()=>{ const t=$('rankTabs'); t.innerHTML=''; const mk=(lab,val)=>{ const b=document.createElement('button'); b.className=(rankPref===val?'yes':'soft'); b.textContent=lab; b.onclick=()=>{ rankPref=val; tabs(); draw(); }; t.appendChild(b); };
+    const my=(()=>{try{return localStorage.getItem('koukou-pref')||''}catch(e){return ''}})();
+    if(my) mk(my, my); if(rankPref && rankPref!==my) mk(rankPref, rankPref); mk('全国',''); };
+  const draw=()=>{
+    const hard=Object.entries(D.schools).filter(([sid])=>inPref(sid)).map(([sid,s])=>{ const r=live[sid]; const real=r&&r.n>=10; return [sid,s,real?r.hit/r.n:s.hit,real]; })
+      .sort((a,b)=>a[2]-b[2]).slice(0,10);
+    $('hardRank').innerHTML=hard.map(([sid,s,h,real],i)=>`<tr><td class="n">${i+1}</td><td>${shortName(sid)}${s.gone?'<span class="small">（今は無い）</span>':''}</td><td class="v">的中率 ${Math.round(h*100)}%${real?'':'<span class="small">（試算）</span>'}</td></tr>`).join('');
+    if(GAS){
+      $('powTitle').textContent='母校パワーランキング';
+      const pw=Object.entries(live).filter(x=>x[1].n>0 && inPref(x[0])).sort((a,b)=>b[1].pts-a[1].pts);
+      const total=pw.reduce((s,x)=>s+x[1].n,0);
+      $('powNote').textContent=`${rankPref||'全国'}の母校ランキング。遊んだ回数 × 早く当てられた度で上がる！（これまで${total}回）`;
+      // 枠の中でスクロール。自分の母校（最後に遊んだ学校）の順位を上に出す。学校名でしぼれる
+      let me=''; try{ me=localStorage.getItem('koukou-last-sid')||''; }catch(e){}
+      const qq=($('rankSearch').value||'').trim();
+      const rows=pw.map(([sid,r],i)=>[sid,r,i+1]).filter(([sid])=>!qq || shortName(sid).includes(qq) || ((D.schools[sid]||{}).old||[]).some(x=>x.includes(qq)));
+      $('powRank').innerHTML = rows.length ? rows.map(([sid,r,k])=>`<tr id="rk_${sid}"${sid===me?' style="background:#f6e7a8"':''}><td class="n">${k}</td><td>${shortName(sid)}<div class="small">当たり${r.hit}回・AIの負け${r.miss}回</div></td><td class="v">${r.pts} pt</td></tr>`).join('')
+        : (qq ? '<tr><td class="small">見つかりません（まだ点がない学校かもしれません）</td></tr>' : '<tr><td class="small">まだ記録がありません。最初の1点を母校に入れよう。</td></tr>');
+      const mi=pw.findIndex(([sid])=>sid===me);
+      if(mi>=0){ $('myRank').style.display=''; $('myRank').innerHTML=`<b>あなたの母校</b>　${shortName(me)}：<b>${mi+1}位</b>（${pw[mi][1].pts} pt）<span class="small">　タップで表の中へ</span>`;
+        $('myRank').onclick=()=>{ $('rankSearch').value=''; draw(); const tr=document.getElementById('rk_'+me); if(tr){ $('rankBox').scrollTop=tr.offsetTop-$('rankBox').clientHeight/2; } }; }
+      else $('myRank').style.display='none';
+    }
+  };
+  $('rankSearch').value=''; $('rankSearch').oninput=()=>draw(); $('rankBox').scrollTop=0;
+  tabs(); draw(); $('counter').textContent='ランキング'; show('s-rank');
+  if(GAS){ $('powRank').innerHTML='<tr><td class="small">読み込み中…</td></tr>';
+    GAS.withSuccessHandler(rows=>{ (rows||[]).forEach(r=>{ if(r && typeof r.sid==='string' && D.schools[r.sid]) live[r.sid]={sid:r.sid,n:+r.n||0,hit:+r.hit||0,miss:+r.miss||0,pts:+r.pts||0}; }); draw(); }).withFailureHandler(()=>{ $('powRank').innerHTML='<tr><td class="small">読み込めませんでした</td></tr>'; }).getRanking(); }
+}
+
+// ---- 逆モード ----
+let rv;
+function pickSecret(){ let r=Math.random(), acc=0; for(let i=0;i<D.candidates.length;i++){ acc+=D.candidates[i].w; if(r<=acc) return i; } return D.candidates.length-1; }
+function aiAnswer(p){ return p>=.65?'はい':p<=.35?'いいえ':p>=.5?'たぶんそう':'たぶん違う'; }
+const AKEY={'はい':'yes','いいえ':'no','たぶんそう':'pyes','たぶん違う':'pno'};
+function startRev(){ lastMode='r';
+  rv={secret:pickSecret(), asked:[], n:0, miss:0}; g=E.newGame(D); updateMap(false); $('maplabel').textContent='逆モード：地図はヒントなし。自分の頭で推理してください';
+  $('alog').innerHTML='<span class="small">まだ質問していません</span>'; renderQList(); $('rqno').textContent='逆モード：質問 0'; $('counter').textContent='逆モード'; show('s-rev');
+}
+function renderQList(){
+  const cats=['場所','偏差値','年代','中軸','仕上げ'], names={'場所':'場所','偏差値':'学力','年代':'時代','中軸':'学校のタイプ','仕上げ':'学校の特徴'};
+  let h=''; for(const c of cats){ const qs=D.questions.map((q,i)=>[q,i]).filter(([q,i])=>q.cat===c&&q.look!=='×'&&!q.dyn&&!rv.asked.includes(i));
+    if(!qs.length) continue; h+=`<div class="cat">${names[c]}</div>`+qs.map(([q,i])=>`<button data-q="${i}">${q.text}</button>`).join(''); }
+  $('qlist').innerHTML=h;
+  $('qlist').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.q, q=D.questions[i], a=aiAnswer(q.p[rv.secret]); rv.asked.push(i); rv.n++;
+    E.answer(D,g,i,AKEY[a]);
+    const line=`Q${rv.n}. ${q.text} → <b>${a}</b>`; $('alog').innerHTML=(rv.n===1?'':$('alog').innerHTML+'<br>')+line; $('alog').scrollTop=1e6;
+    $('rqno').textContent=`逆モード：質問 ${rv.n}`; renderQList();
+  });
+}
+$('revGuessBtn').onclick=()=>{
+  const l=$('revPickList'); l.innerHTML='';
+  Object.entries(D.schools).sort((a,b)=>a[1].name.localeCompare(b[1].name,'ja')).forEach(([sid,s])=>{
+    const b=document.createElement('button'); b.textContent=s.name+(s.gone?'（今は無い）':''); if(g.excluded.has(sid)) b.disabled=true, b.style.opacity=.35;
+    b.onclick=()=>{ const ans=D.candidates[rv.secret];
+      if(sid===ans.sid) return revEnd(true);
+      rv.miss++; E.exclude(D,g,sid);
+      $('alog').innerHTML+=`<br>予想：${s.name.replace(/（.*/,'')} → <b>ちがう</b>`; show('s-rev'); };
+    l.appendChild(b); });
+  show('s-revpick');
+};
+$('revBackBtn').onclick=()=>show('s-rev');
+$('revGiveBtn').onclick=()=>revEnd(false);
+function revEnd(win){
+  const ans=D.candidates[rv.secret]; const total=rv.n+rv.miss;
+  $('endSub').textContent = win ? `質問${rv.n}回・はずれ${rv.miss}回で正解！` : '降参…AIの高校は';
+  $('endName').textContent = ans.school; $('endPts').textContent = `${ans.decade}の卒業生という設定でした`;
+  $('shareText').textContent = win ? `「どこ高？」逆モード\nAIの高校（${ans.school}）を ${total}手で当てた！` : `「どこ高？」逆モード\nAIの高校を当てられなかった…`; setLine($('shareText').textContent);
+  $('hist').innerHTML=$('alog').innerHTML; g.post=D.candidates.map((c,i)=>i===rv.secret?1:0); g.excluded=new Set(); updateMap(true); $('maplabel').textContent='AIの高校'; $('counter').textContent='結果'; show('s-end');
+}
+
+
+// ---- 観戦モード（運営用：ロゴを3秒以内に5回タップ） ----
+const WM={speed:1,timer:null,paused:false,auto:false,ci:-1};
+const WSP=[[1,'ふつう',1100],[2,'速い',350],[0,'ゆっくり',2200]];
+let wTaps=[];
+document.querySelector('header .logo').addEventListener('click',()=>{ const now=Date.now(); wTaps=wTaps.filter(x=>now-x<3000); wTaps.push(now);
+  if(wTaps.length>=5){ wTaps=[]; wOpen(); } });
+function wOpen(){ wStop(); $('wSetup').classList.remove('hidden'); $('wRun').classList.add('hidden'); $('wSearch').value=''; wFilter(); $('counter').textContent='観戦モード'; show('s-watch'); }
+function wFilter(){ const q=$('wSearch').value.trim(); const l=$('wList'); l.innerHTML='';
+  if(!q){ l.innerHTML='<span class="small">学校名を入れると候補が出ます</span>'; return; }
+  let n=0; for(const [sid,s] of Object.entries(D.schools)){ if(!s.name.includes(q)) continue; if(++n>30) break;
+    const b=document.createElement('button'); b.textContent=s.name; b.onclick=()=>{ WM.auto=false; wRunSchool(sid); }; l.appendChild(b); } if(!n) l.innerHTML='<span class="small">見つかりません</span>'; }
+$('wSearch').oninput=wFilter;
+$('wSpeed').onclick=()=>{ const i=(WSP.findIndex(x=>x[0]===WM.speed)+1)%WSP.length; WM.speed=WSP[i][0]; $('wSpeed').textContent='速さ：'+WSP[i][1]; };
+function wDelay(){ return (WSP.find(x=>x[0]===WM.speed)||WSP[0])[2]; }
+function wStop(){ clearTimeout(WM.timer); WM.timer=null; }
+function wPickCand(sid){ const idx=[]; let tot=0; D.candidates.forEach((c,i)=>{ if(c.sid===sid){ idx.push(i); tot+=c.w; } });
+  let r=Math.random()*tot; for(const i of idx){ r-=D.candidates[i].w; if(r<=0) return i; } return idx[idx.length-1]; }
+function wKey(p){ return p>=.65?'yes':p<=.35?'no':p>=.5?'pyes':'pno'; }
+function wRunSchool(sid){
+  wStop(); WM.paused=false; $('wPause').textContent='一時停止';
+  WM.ci=wPickCand(sid); const c=D.candidates[WM.ci];
+  g=E.newGame(D); pinto=[]; updateMap(false);
+  $('wSetup').classList.add('hidden'); $('wRun').classList.remove('hidden');
+  $('wWho').innerHTML=`なりきり：<b>${c.school}</b>（${c.decade}卒）`; $('wLog').innerHTML='';
+  WM.timer=setTimeout(wStep, wDelay());
+}
+function wStep(){
+  if(WM.paused) return;
+  const c=D.candidates[WM.ci];
+  // ピンとくる？（なりきり：自分の学校なら「はい」、ちがえば「いいえ」）
+  const tp=E.top(D,g);
+  if(tp.prob>=PINTO_AT && (g.n>=6 || E.shouldGuess(D,g)) && pinto.length<PINTO_MAX && !pinto.some(p=>p.sid===tp.sid)){
+    const w=pintoWord(tp.sid);
+    if(w){ const k=tp.sid===c.sid?'yes':'no'; pinto.push({sid:tp.sid,word:w,ans:k});
+      $('wLog').insertAdjacentHTML('beforeend',`<div>Q${g.n+1}. 💡「${w}」ピンとくる？（${shortName(tp.sid)}）→ <b>${LABEL[k]}</b></div>`);
+      $('wLog').scrollTop=1e9; E.answerSid(D,g,tp.sid,k); updateMap(false); WM.timer=setTimeout(wStep, wDelay()); return; }
+  }
+  if(E.shouldGuess(D,g) || E.nextQuestion(D,g)===null){
+    const t=E.top(D,g), ok=t.sid===c.sid;
+    $('wLog').insertAdjacentHTML('beforeend',`<div style="margin-top:6px"><b>予想：${t.school}（${t.decade}）→ ${ok?'当たり！':'はずれ'}${ok&&t.decade!==c.decade?'（年代ははずれ）':''}</b>　${g.n}問</div>`);
+    updateMap(true); $('wLog').scrollTop=1e9;
+    if(WM.auto) WM.timer=setTimeout(wRandom, wDelay()*3+1500);
+    return;
+  }
+  const qi=E.nextQuestion(D,g), q=D.questions[qi], p=q.p[WM.ci], k=wKey(p);
+  const tag=q.nm?'📍':'', w=qWord(qi), shown=w.flip?FLIP[k]:k;
+  $('wLog').insertAdjacentHTML('beforeend',`<div>Q${g.n+1}. ${tag}${w.flip?'🔁':''}${w.text} → <b>${LABEL[shown]}</b> <span class="small">（${Math.round((w.flip?1-p:p)*100)}%）</span></div>`);
+  $('wLog').scrollTop=1e9; $('counter').textContent=`観戦：質問 ${g.n+1}`;
+  E.answer(D,g,qi,k); updateMap(false);
+  WM.timer=setTimeout(wStep, wDelay());
+}
+function wRandom(){ WM.auto=true; const sids=Object.keys(D.schools); wRunSchool(sids[Math.floor(Math.random()*sids.length)]); }
+$('wRandom').onclick=wRandom;
+$('wPause').onclick=()=>{ WM.paused=!WM.paused; $('wPause').textContent=WM.paused?'再開':'一時停止'; if(!WM.paused){ wStop(); WM.timer=setTimeout(wStep, 200); } };
+$('wNext').onclick=()=>{ if(WM.auto) wRandom(); else wOpen(); };
+
+// ---- 運営用：あるあるの管理（合言葉はこの端末にだけ保存） ----
+function aPass(){ return $('aPass').value || (()=>{ try{ return localStorage.getItem('koukou-admin')||''; }catch(e){ return ''; } })(); }
+function aLoad(){
+  if(!GAS){ $('aMsg').textContent='公開版でだけ使えます'; return; }
+  const pass=aPass(); if(!pass){ $('aMsg').textContent='合言葉を入れてください'; return; }
+  $('aMsg').textContent='読み込み中…';
+  GAS.withSuccessHandler(res=>{
+    if(!res||!res.ok){ $('aMsg').textContent=(res&&res.msg)||'読み込めませんでした'; return; }
+    try{ localStorage.setItem('koukou-admin',pass); }catch(e){}
+    $('aPass').value=''; aRender(res.rows,res.minPost,pass);
+  }).withFailureHandler(()=>{ $('aMsg').textContent='読み込めませんでした'; }).adminAruList({pass});
+}
+function aRender(rows,minPost,pass){
+  const st=r=>r.hidden?'非表示':(r.score<=0?'点が0以下で出ない':(r.src==='投稿'&&r.posts<minPost?'あと'+(minPost-r.posts)+'人で出る':'ゲームに出る'));
+  const rank=r=>r.hidden?3:(st(r)==='ゲームに出る'?0:(r.src==='投稿'?1:2));
+  rows.sort((a,b)=>rank(a)-rank(b)||b.score-a.score);
+  const box=$('aList'); box.innerHTML='';
+  $('aMsg').textContent='全'+rows.length+'件。「ゲームに出る」「あと○人で出る」を見回ればOK';
+  rows.forEach(r=>{
+    const d=document.createElement('div'); d.style.cssText='padding:8px 0;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center'+(r.hidden?';opacity:.5':'');
+    const t=document.createElement('div'); t.style.flex='1';
+    const n=document.createElement('div'); n.textContent=r.text; n.style.fontWeight='700';
+    const m=document.createElement('div'); m.className='small';
+    m.textContent=((D.schools[r.sid]&&D.schools[r.sid].name)||r.school||r.sid)+'・'+(r.src==='投稿'?'投稿'+r.posts+'件':'収集')+'・はい'+r.yes+'/いいえ'+r.no+'・'+st(r);
+    t.appendChild(n); t.appendChild(m);
+    const b=document.createElement('button'); b.className=r.hidden?'soft':'no'; b.textContent=r.hidden?'戻す':'非表示';
+    b.onclick=()=>{ b.disabled=true; GAS.withSuccessHandler(x=>{ if(!x||!x.ok){ $('aMsg').textContent=(x&&x.msg)||'できませんでした'; b.disabled=false; return; } aLoad(); }).withFailureHandler(()=>{ b.disabled=false; $('aMsg').textContent='できませんでした'; }).adminAruHide({pass,row:r.row,text:r.text,hide:!r.hidden}); };
+    d.appendChild(t); d.appendChild(b); box.appendChild(d);
+  });
+  const fill=rows.filter(r=>!r.school&&D.schools[r.sid]).map(r=>({row:r.row,text:r.text,name:D.schools[r.sid].name}));
+  if(fill.length) GAS.withSuccessHandler(()=>{}).withFailureHandler(()=>{}).adminFillNames({pass,items:fill});
+}
+$('aLogin').onclick=aLoad;
+$('aOwner').onclick=()=>{
+  if(!GAS){ $('oMsg').textContent='公開版でだけ使えます'; return; }
+  const pass=aPass(); if(!pass){ $('oMsg').textContent='合言葉を入れてください'; return; }
+  $('oMsg').textContent='登録中…';
+  GAS.withSuccessHandler(x=>{ if(!x||!x.ok){ $('oMsg').textContent=(x&&x.msg)||'できませんでした'; return; }
+    try{ localStorage.setItem('koukou-admin',pass); }catch(e){}
+    $('oMsg').textContent='登録しました。この端末の結果は、これまでの分もふくめてランキングに入りません（登録ずみ '+x.n+'台）'; })
+  .withFailureHandler(()=>{ $('oMsg').textContent='できませんでした'; }).adminOwner({pass,client:clientId()});
+};
+
+// ---- 途中でやめた回も記録する（学校名はわからないまま、答えとAIの予想上位だけ） ----
+let gameOpen=false;
+function quitTop(){ try{ const m=E.schoolMarg(D,g.post); return m.filter(([sid])=>!g.excluded.has(sid)).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([sid])=>sid).join(','); }catch(e){ return ''; } }
+function quitSave(){ if(!gameOpen) return; try{ localStorage.setItem('koukou-pending',JSON.stringify({n:g.n,guesses,answers:qlog.join(','),top:quitTop(),sent:false})); }catch(e){} }
+function quitFlush(reason){
+  let p=null; try{ p=JSON.parse(localStorage.getItem('koukou-pending')||'null'); }catch(e){}
+  if(!p||p.sent||!p.n){ return; }
+  p.sent=true; try{ localStorage.setItem('koukou-pending',JSON.stringify(p)); }catch(e){}
+  if(GAS) GAS.withSuccessHandler(()=>{ try{ const q=JSON.parse(localStorage.getItem('koukou-pending')||'null'); if(q&&q.sent) localStorage.removeItem('koukou-pending'); }catch(e){} }).withFailureHandler(()=>{}).recordQuit({reason,n:p.n,guesses:p.guesses,top:p.top,answers:p.answers,client:clientId()});
+}
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden' && gameOpen){ quitSave(); quitFlush('とちゅうで画面をとじた'); } });
+setTimeout(()=>quitFlush('前回の途中'),3000);
+// はずれたときの答え合わせ：AIが迷った学校＋名前でさがす
+function pickTop(){
+  const l=$('pickList'); l.innerHTML='';
+  const q=$('pickSearch').value.trim();
+  const add=(sid,s,ol)=>{ const b=document.createElement('button'); b.textContent=s.name+(ol?'（旧 '+ol+'）':'')+(s.gone?'（今は無い）':''); b.onclick=()=>end(false,{school:s.name,sid}); l.appendChild(b); };
+  if(q){ let n=0; for(const [sid,s] of Object.entries(D.schools)){ let ol=''; if(!s.name.includes(q)){ ol=(s.old||[]).find(x=>x.includes(q)); if(!ol) continue; } if(++n>40) break; add(sid,s,ol); }
+    if(!n){ const m=document.createElement('div'); m.className='small'; m.textContent='見つかりません。別の言い方で入れてみてください'; l.appendChild(m); } }
+  else { const h=document.createElement('div'); h.className='small'; h.textContent='AIが迷った学校（この中にありますか？）'; l.appendChild(h);
+    try{ const m=E.schoolMarg(D,g.post); m.filter(([sid])=>!g.excluded.has(sid)&&D.schools[sid]).sort((a,b)=>b[1]-a[1]).slice(0,10).forEach(([sid])=>add(sid,D.schools[sid])); }catch(e){} }
+  const r=document.createElement('button'); r.className='soft'; r.textContent='地域から選ぶ'; r.onclick=()=>pick(null); l.appendChild(r);
+  const x=document.createElement('button'); x.className='ghost'; x.textContent='教えずに終わる'; x.onclick=()=>{ quitSave(); quitFlush('答えを教えずに終了'); gameOpen=false; home(); }; l.appendChild(x);
+}
+$('pickSearch').addEventListener('input',pickTop);
+$('wBack').onclick=()=>{ wStop(); WM.auto=false; home(); };
+function home(){ if(gameOpen){ quitSave(); quitFlush('ホームにもどった'); gameOpen=false; } g=E.newGame(D); updateMap(false); $('maplabel').textContent=''; $('counter').textContent='全国版'; show('s-start'); }
+$('rankBtn').onclick=()=>showRank();
+$('rankBackBtn').onclick=()=>home();
+
+// ---- 言葉の雲 ----
+const CW={els:[], w:0, h:0, raf:0};
+function buildCloud(){
+  const box=$('cloud'); box.innerHTML=''; CW.els=[];
+  const r=box.getBoundingClientRect(); CW.w=r.width; CW.h=r.height;
+  const rots=[0,0,-90,90,-60,60,-30,30,-15,15];
+  let seed=7; const rnd=()=>{ seed=(seed*16807)%2147483647; return seed/2147483647; };
+  for(const [sid,list] of Object.entries(D.words)){
+    for(let word of list){
+      const reveal=word.startsWith('*'); if(reveal) word=word.slice(1);
+      // 文字の要素は、画面に出すときだけ作る（全部作るとiPhoneのメモリが足りなくなる）
+      CW.els.push({el:null,word,sid,reveal,x:rnd()*CW.w,y:rnd()*CW.h,vx:(rnd()-.5)*.25,vy:(rnd()-.5)*.25,
+        rot:rots[Math.floor(rnd()*rots.length)],tx:null,ty:null,fs:12,op:.3,vis:false});
+    }
+  }
+  if(!CW.raf) tick();
+}
+function tick(){
+  const bx=$('cloud').getBoundingClientRect();
+  if(bx.width>0 && (Math.abs(bx.width-CW.w)>2 || Math.abs(bx.height-CW.h)>2)){ // 枠の大きさが変わったら位置を伸ばし直す
+    const sx=bx.width/(CW.w||bx.width), sy=bx.height/(CW.h||bx.height);
+    for(const w of CW.els){ w.x*=sx; w.y*=sy; if(w.tx!==null){ w.tx*=sx; w.ty*=sy; } }
+    CW.w=bx.width; CW.h=bx.height;
+  }
+  for(const w of CW.els){
+    if(!w.vis || !w.el) continue;
+    if(w.tx!==null){ w.x+=(w.tx-w.x)*.04; w.y+=(w.ty-w.y)*.04; }
+    else { w.x+=w.vx; w.y+=w.vy;
+      if(w.x<-80) w.x=CW.w+40; if(w.x>CW.w+80) w.x=-40; if(w.y<-40) w.y=CW.h+30; if(w.y>CW.h+40) w.y=-30; }
+    w.el.style.transform=`translate(${w.x}px,${w.y}px) translate(-50%,-50%) rotate(${w.tx!==null?0:w.rot}deg)`;
+  }
+  CW.raf=requestAnimationFrame(tick);
+}
+function updateCloud(m, done){
+  const nameEl=$('cloudName');
+  const mx=Math.max(...Object.values(m),1e-9);
+  // 一番ありそうな学校の言葉を、ある程度絞れたら中央に集める
+  const top=Object.entries(m).sort((a,b)=>b[1]-a[1])[0];
+  const focus = top && (top[1]>.55 || done) ? top[0] : null;
+  let k=0; const fw=CW.els.filter(w=>w.sid===focus); const n=fw.length;
+  // 学校が多いと雲が潰れるので、ありそうな上位の学校の言葉だけ出す
+  if(!CW.jit){ CW.jit={}; let sd=11; for(const sid of Object.keys(D.words)){ sd=(sd*16807)%2147483647; CW.jit[sid]=sd/2147483647*1e-9; } }
+  const shown=new Set(Object.keys(D.words).sort((a,b)=>((m[b]||0)+CW.jit[b])-((m[a]||0)+CW.jit[a])).slice(0,45));
+  if(done && focus){ nameEl.textContent=D.schools[focus].name.replace(/（.*/,''); nameEl.classList.add('on'); } else nameEl.classList.remove('on');
+  for(const w of CW.els){
+    const vis=shown.has(w.sid)||w.sid===focus;
+    if(vis!==w.vis){ w.vis=vis;
+      if(vis){ const el=document.createElement('div'); el.className='w'; el.textContent=w.word; el.style.fontSize='12px'; el.style.opacity='.3'; $('cloud').appendChild(el); w.el=el; }
+      else if(w.el){ w.el.remove(); w.el=null; } }
+    if(!vis){ w.tx=null; continue; }
+    const abs=m[w.sid]||0, rel=abs/mx;
+    const s=Math.min(1,abs/.35);
+    let op = g.excluded && g.excluded.has(w.sid) ? .02 : .07 + .88*Math.pow(s,.9);
+    if(w.reveal && abs<.45 && !done) op=0;
+    const fs = w.sid===focus ? 19 : 10 + 11*s;
+    w.el.style.opacity=op.toFixed(2); w.el.style.fontSize=fs.toFixed(1)+'px';
+    w.el.classList.toggle('hot', w.sid===focus);
+    if(w.sid===focus){
+      if(done){ // 校名を真ん中に出し、言葉は上下に分けて囲む
+        const up=Math.ceil(n/2), i=k<up?k:k-up, cnt=k<up?up:n-up;
+        const y0=k<up?CW.h*.1:CW.h/2+48, y1=k<up?CW.h/2-46:CW.h*.84;
+        w.ty = cnt<=1 ? (y0+y1)/2 : y0+(y1-y0)*i/(cnt-1);
+        w.tx = CW.w/2 + ((i%2)?1:-1)*CW.w*.14*((i%3)/2+.3);
+      } else { const rowH=Math.min(34,(CW.h*.78)/Math.max(1,n-1));
+        w.tx=CW.w/2 + ((k%3)-1)*CW.w*.12; w.ty=CW.h/2 + (k-(n-1)/2)*rowH; }
+      k++; }
+    else { w.tx=null; }
+  }
+}
+
+drawMap(); g=E.newGame(D); updateMap(false); $('maplabel').textContent='';
+</script>
+</body>
+</html>
