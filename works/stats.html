@@ -85,6 +85,12 @@ function vbars(title,keys,s1,s2,leg){ const max=Math.max(1,...s1,...(s2||[]));
   const bars=keys.map((k,i)=>`<div style="flex:1;display:flex;gap:1px;align-items:flex-end;height:100%"><div title="${esc(k)} ${s1[i]}" style="flex:1;min-height:1px;height:${100*s1[i]/max}%;background:var(--bar)"></div>${s2?`<div title="${esc(k)} ${s2[i]}" class="b" style="flex:1;height:${100*s2[i]/max}%;background:var(--bar2)"></div>`:''}</div>`).join('');
   const step=Math.ceil(keys.length/12); const ax=keys.map((k,i)=>`<span>${i%step===0?esc(k):''}</span>`).join('');
   return `<div class="card"><h2>${esc(title)}</h2>${leg?`<div class="sub legend">${leg}</div>`:''}<div class="bars">${bars}</div><div class="axis">${ax}</div></div>`; }
+// 紹介ページの区切り（data-sec）の名前。11/4 22時に並びを変えた
+const SN_OLD=['','名前','作ったもの','これまで','相談できること','進め方','連絡先','いちばん下'];
+const SN_NEW=['','名前','相談できること','進め方','作ったもの','これまで','連絡先','いちばん下'];
+const ORDER_CHANGED='2026-11-04T22:00:00';
+const isNewOrder=t=>String(t)>=ORDER_CHANGED;
+const secName=(n,t)=>(isNewOrder(t)?SN_NEW:SN_OLD)[n]||'';
 // ---- 本体 ----
 function render(){
   const H=RAW.head, idx=n=>H.indexOf(n), own=new Set(RAW.owners||[]), exOwn=$('exOwn').checked;
@@ -94,10 +100,10 @@ function render(){
   const R=RAW.results.map(r=>({t:r[0],sid:r[1],q:+r[2],gs:+r[3],win:+r[4],c:r[5],ref:r[6]})).filter(o=>inRange(o.t)&&!(exOwn&&own.has(o.c)));
   const clicks=M.filter(o=>o['できごと']==='click'), opens=M.filter(o=>o['できごと']==='open'), mails=M.filter(o=>o['できごと']==='mail');
   // 訪問ごと（訪問IDでまとめる）
-  const V=new Map(); M.forEach(o=>{ const k=o['訪問ID']||('x'+Math.random()); if(!V.has(k)) V.set(k,{id:k,click:null,open:null,dur:0,scroll:0,sect:0,mail:0,goDokoko:0});
+  const V=new Map(); M.forEach(o=>{ const k=o['訪問ID']||('x'+Math.random()); if(!V.has(k)) V.set(k,{id:k,click:null,open:null,dur:0,scroll:0,sect:0,mail:0,goDokoko:0,go:new Set()});
     const v=V.get(k), ev=o['できごと'];
     if(ev==='click') v.click=o; if(ev==='open'&&!v.open) v.open=o; if(ev==='mail') v.mail=1;
-    if(o['シェア']==='go-dokoko') v.goDokoko=1;
+    if(/^go-/.test(o['シェア']||'')){ v.go.add(String(o['シェア']).slice(3)); if(o['シェア']==='go-dokoko') v.goDokoko=1; }
     if(ev==='leave'||ev==='mail'||ev==='open'){ v.dur=Math.max(v.dur,+o['滞在(秒)']||0); v.scroll=Math.max(v.scroll,+o['スクロール(%)']||0); v.sect=Math.max(v.sect,+o['見た区切り']||0); } });
   const visits=[...V.values()].filter(v=>v.open);
   const fromDokoko=visits.filter(v=>v.click||(v.open&&v.open['入口']==='dokoko'));
@@ -142,14 +148,16 @@ function render(){
   h+='</div><h2 style="margin:22px 0 4px">ページの見られ方</h2><div class="grid">';
   h+=hbars('見た時間',count(visits,v=>bucket(v.dur,[5,15,30,60,180],['〜4秒','5〜14秒','15〜29秒','30〜59秒','1〜3分','3分〜']),['〜4秒','5〜14秒','15〜29秒','30〜59秒','1〜3分','3分〜']),{b:1});
   h+=hbars('どこまで下に見たか',count(visits,v=>bucket(v.scroll,[25,50,75,95],['〜24%','25〜49%','50〜74%','75〜94%','95〜100%']),['〜24%','25〜49%','50〜74%','75〜94%','95〜100%']),{b:1});
-  const SN=['','名前','作ったもの','これまで','相談できること','進め方','連絡先','いちばん下'];
-  h+=hbars('どの区切りまで見たか',SN.slice(1).map((n,i)=>[n,visits.filter(v=>v.sect>=i+1).length]),{b:1,note:'その区切りまで画面に出た訪問の数'});
-  h+=hbars('ページからどこ高に戻った',[['戻った',visits.filter(v=>v.goDokoko).length],['戻っていない',visits.filter(v=>!v.goDokoko).length]],{b:1});
+  const vNew=visits.filter(v=>isNewOrder(v.open['日時'])), vOld=visits.filter(v=>!isNewOrder(v.open['日時']));
+  h+=hbars('どの区切りまで見たか（今の並び）',SN_NEW.slice(1).map((n,i)=>[n,vNew.filter(v=>v.sect>=i+1).length]),{b:1,note:'11/4 22時から。その区切りまで画面に出た訪問の数'});
+  if(vOld.length) h+=hbars('どの区切りまで見たか（前の並び）',SN_OLD.slice(1).map((n,i)=>[n,vOld.filter(v=>v.sect>=i+1).length]),{b:1,note:'11/4 22時より前'});
+  const GN={dokoko:'どこ高',pasta:'回らないパスタ屋',clinic:'待たせないリハビリ室',factory:'造りすぎ工場'};
+  h+=hbars('ページから作ったものを開いた',Object.keys(GN).map(k=>[GN[k],visits.filter(v=>v.go.has(k)).length]).concat([['どれも開いていない',visits.filter(v=>!v.go.size).length]]),{b:1});
   h+='</div>';
   // 一覧
   const list=visits.concat([...V.values()].filter(v=>!v.open&&v.click)).sort((a,b)=>String((b.click||b.open)['日時']).localeCompare(String((a.click||a.open)['日時']))).slice(0,100);
   h+=`<div class="card"><h2>訪問ごとの一覧（新しい順・100件まで）</h2><div class="sub">学校名は分析用です。外には出さないでください。</div><div class="scroll"><table><tr>${['日時','入口','学校','都道府県','年代','当たり','質問','押すまで','何回目','シェア','投稿','卒業年','来た元','OS','アプリ内','見た時間','下まで','区切り','メール'].map(x=>`<th>${x}</th>`).join('')}</tr>`+
-    list.map(v=>{ const c=v.click||{}, o=v.open||{}; return `<tr><td>${esc(String((v.click||v.open)['日時']).replace('T',' ').slice(5,16))}</td><td>${esc(o['入口']||c['入口']||'')}</td><td>${esc(c['学校名']||'')}</td><td>${esc(c['都道府県']||'')}</td><td>${esc(c['年代']||'')}</td><td>${c['当たり']===''||c['当たり']==null?'':(+c['当たり']?'○':'×')}</td><td>${esc(c['質問数']||'')}</td><td>${esc(c['結果から押すまで(秒)']!==''&&c['結果から押すまで(秒)']!=null?c['結果から押すまで(秒)']+'秒':'')}</td><td>${esc(c['何回目のゲーム']||'')}</td><td>${esc(c['シェア']||'')}</td><td>${esc(c['あるある投稿']||'')}</td><td>${esc(c['卒業年']||'')}</td><td>${esc(c['来た元']||o['来た元']||'')}</td><td>${esc(o['OS']||c['OS']||'')}</td><td>${esc(o['アプリ内']||c['アプリ内']||'')}</td><td>${v.open?v.dur+'秒':'開いていない'}</td><td>${v.open?v.scroll+'%':''}</td><td>${v.open?esc(SN[v.sect]||''):''}</td><td>${v.mail?'○':''}</td></tr>`; }).join('')+`</table></div></div>`;
+    list.map(v=>{ const c=v.click||{}, o=v.open||{}; return `<tr><td>${esc(String((v.click||v.open)['日時']).replace('T',' ').slice(5,16))}</td><td>${esc(o['入口']||c['入口']||'')}</td><td>${esc(c['学校名']||'')}</td><td>${esc(c['都道府県']||'')}</td><td>${esc(c['年代']||'')}</td><td>${c['当たり']===''||c['当たり']==null?'':(+c['当たり']?'○':'×')}</td><td>${esc(c['質問数']||'')}</td><td>${esc(c['結果から押すまで(秒)']!==''&&c['結果から押すまで(秒)']!=null?c['結果から押すまで(秒)']+'秒':'')}</td><td>${esc(c['何回目のゲーム']||'')}</td><td>${esc(c['シェア']||'')}</td><td>${esc(c['あるある投稿']||'')}</td><td>${esc(c['卒業年']||'')}</td><td>${esc(c['来た元']||o['来た元']||'')}</td><td>${esc(o['OS']||c['OS']||'')}</td><td>${esc(o['アプリ内']||c['アプリ内']||'')}</td><td>${v.open?v.dur+'秒':'開いていない'}</td><td>${v.open?v.scroll+'%':''}</td><td>${v.open?esc(secName(v.sect,v.open['日時'])):''}</td><td>${v.mail?'○':''}</td></tr>`; }).join('')+`</table></div></div>`;
   // 来た元URL
   const urls=count(M.filter(o=>o['来た元URL']),o=>o['来た元URL']).slice(0,30);
   h+=hbars('来た元のURL（くわしく）',urls);
