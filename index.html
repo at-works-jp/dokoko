@@ -878,7 +878,8 @@ function gasRun_(ok,ng){ return new Proxy({},{get(_,k){ if(k==='withSuccessHandl
 const GAS = (typeof google!=='undefined' && google.script && google.script.run) ? google.script.run : (/^https?:/.test(location.protocol) ? gasRun_(null,null) : null);
 if(GAS){ const n=document.getElementById('privNote'); if(n) n.textContent='遊んだ結果（当てた学校・質問数・1問ごとの答え・卒業年）をAIを育てるためとランキングのために送ります。名前やメールなどの個人情報は集めません。'; }
 // 来た元（どのサイトから開いたか）。ドメインだけ記録する。旧URLからの転送は ?ref= で受け取る
-const REF=(()=>{ try{ const q=new URLSearchParams(location.search).get('ref'); let r=(q!==null)?q:(document.referrer||''); if(!r) return '(なし)'; try{ r=new URL(r).hostname||r; }catch(e){} if(r===location.hostname) return '(なし)'; return String(r).slice(0,60); }catch(e){ return ''; } })();
+const INAPP=(()=>{ const ua=navigator.userAgent||''; if(/musical_ly|TikTok|BytedanceWebview|ByteLocale/i.test(ua)) return 'TikTok'; if(/Line\//i.test(ua)) return 'LINE'; if(/Instagram/i.test(ua)) return 'Instagram'; if(/FBAN|FBAV/.test(ua)) return 'Facebook'; if(/Twitter/i.test(ua)) return 'X'; return ''; })();
+const REF=(()=>{ const tag=INAPP?' @'+INAPP:''; try{ const q=new URLSearchParams(location.search).get('ref'); let r=(q!==null)?q:(document.referrer||''); if(!r) return '(なし)'+tag; try{ r=new URL(r).hostname||r; }catch(e){} if(r===location.hostname) return '(なし)'+tag; return String(r).slice(0,48)+tag; }catch(e){ return tag.trim(); } })();
 const REFURL=(()=>{ try{ const q=new URLSearchParams(location.search).get('ref'); return String(q!==null?q:(document.referrer||'')).slice(0,300); }catch(e){ return ''; } })();
 let GST=null;
 function devInfo(){ const ua=navigator.userAgent||''; let os='その他'; if(/iPhone|iPod/.test(ua)) os='iPhone'; else if(/iPad/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1)) os='iPad'; else if(/Android/.test(ua)) os='Android'; else if(/Windows/.test(ua)) os='Windows'; else if(/Macintosh/.test(ua)) os='Mac';
