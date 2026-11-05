@@ -345,7 +345,7 @@ function judge(hit){
   const nm=D.schools[sid].name;
   $('missmsg').innerHTML='くっ…！<br>AIはあなたを<b>「'+esc(nm)+'」</b>の生徒だと思いました…';
   $('missaruh').textContent=nm+'のあるある'; fillAru('missaru','missaruw',sid);
-  shareBox('sharemiss','AIに「'+nm+'の生徒っぽい」って言われた笑 あなたは何高っぽい？','share-miss');
+  shareBox('sharemiss','AIに「'+nm+'の生徒っぽい」って言われた笑（ほんとはちがう高校なのに） あなたはなに高っぽい？','share-miss');
   show('s-miss');
 }
 function contQ(){ limit=nAsk+2+5; nextQ(); }
@@ -376,19 +376,19 @@ async function makeImg(kind){
   x.fillStyle='#FFE9EF'; x.beginPath(); x.arc(300,330,250,0,7); x.fill();
   const im=await loadImg(kind==='hit'?'img/atari.png':'img/hazure.png'); if(im) x.drawImage(im,90,120,420,420);
   x.textAlign='center'; const cx=850;
-  x.fillStyle='#F08AA0'; x.font='800 34px '+F; x.fillText('どこ高？ 現役生版',cx,110);
+  x.fillStyle='#F08AA0'; x.font='800 34px '+F; x.fillText('どこ高？',cx,110);
   x.fillStyle='#5A4A3A';
   if(kind==='hit'){ x.font='800 64px '+F; x.fillText('AIに通ってる高校を',cx,250); x.fillText('当てられた…！',cx,330);
     x.fillStyle='#6FAE66'; x.font='800 46px '+F; x.fillText((nAsk+2)+'問でバレた',cx,420); }
   else { const nm=D.schools[curTop.sid].name; x.font='800 44px '+F; x.fillText('AIに',cx,215);
     let fs=72; x.font='800 '+fs+'px '+F; while(x.measureText('「'+nm+'」').width>620&&fs>36){ fs-=4; x.font='800 '+fs+'px '+F; }
-    x.fillStyle='#E0607E'; x.fillText('「'+nm+'」',cx,310); x.fillStyle='#5A4A3A'; x.font='800 44px '+F; x.fillText('の生徒っぽいって言われた笑',cx,390); }
-  x.fillStyle='#8C7B6B'; x.font='600 28px '+F; x.fillText(kind==='hit'?'#どこ高　あなたの高校は当てられる？':'#どこ高　あなたは何高っぽい？',cx,545);
+    x.fillStyle='#E0607E'; x.fillText('「'+nm+'」',cx,310); x.fillStyle='#5A4A3A'; x.font='800 44px '+F; x.fillText('の生徒っぽいって言われた笑',cx,390); x.fillStyle='#8C7B6B'; x.font='700 32px '+F; x.fillText('（ほんとはちがう高校なのに）',cx,450); }
+  x.fillStyle='#8C7B6B'; x.font='600 28px '+F; x.fillText(kind==='hit'?'#どこ高　あなたの高校は当てられる？':'#どこ高　あなたはなに高っぽい？',cx,545);
   return c;
 }
 async function imgShare(kind){
   const c=await makeImg(kind);
-  const tx=(kind==='hit'?'AIに通ってる高校を当てられた…！あなたも当てられる？':'AIに「'+D.schools[curTop.sid].name+'の生徒っぽい」って言われた笑 あなたは何高っぽい？')+'\n#どこ高 #高校あるある\n'+URL0+'?ref=share-img';
+  const tx=(kind==='hit'?'AIに通ってる高校を当てられた…！あなたも当てられる？':'AIに「'+D.schools[curTop.sid].name+'の生徒っぽい」って言われた笑（ほんとはちがう高校なのに） あなたはなに高っぽい？')+'\n#どこ高 #高校あるある\n'+URL0+'?ref=share-img';
   try{ const blob=await new Promise(r=>c.toBlob(r,'image/png')); const file=new File([blob],'dokoko-now.png',{type:'image/png'});
     if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],text:tx}); return; } }catch(e){ if(e&&e.name==='AbortError') return; }
   $('imgout-'+kind).src=c.toDataURL('image/png'); $('imgbox-'+kind).style.display=''; try{ await navigator.clipboard.writeText(tx); }catch(e){}
