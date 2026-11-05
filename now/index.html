@@ -331,7 +331,8 @@ function nowGrad(){ try{ return '現役'+(localStorage.getItem('dokoko-now-ent')
 function setGrade(gr,btn){ const y=entYear(gr); try{ localStorage.setItem('dokoko-now-ent',String(y)); }catch(e){}
   btn.parentNode.querySelectorAll('.chip').forEach(b=>b.classList.remove('on')); btn.classList.add('on');
   gas('setGrade',{sid:aruSid||'',client:clientId(),ent:y}); }
-function record(sid,win){ inGame=false; try{ localStorage.setItem('dokoko-now-sid',sid); }catch(e){} const s=D.schools[sid]||{}; gas('recordResult',{sid,school:s.name||'',questions:nAsk+2,guesses,win:win?1:0,answers:[firstLog].concat(qlog).join(','),client:clientId(),ref:REF,grad:nowGrad()}); }
+function sendVotes(sid){ aruLog.filter(x=>x.sid===sid&&(x.ans==='yes'||x.ans==='no')).forEach(x=>gas('voteAruaru',{sid,school:(D.schools[sid]||{}).name||'',text:x.word,ans:x.ans,client:clientId()})); aruLog=[]; }
+function record(sid,win){ inGame=false; sendVotes(sid); try{ localStorage.setItem('dokoko-now-sid',sid); }catch(e){} const s=D.schools[sid]||{}; gas('recordResult',{sid,school:s.name||'',questions:nAsk+2,guesses,win:win?1:0,answers:[firstLog].concat(qlog).join(','),client:clientId(),ref:REF,grad:nowGrad()}); }
 
 // ---- 最初の画面 ----
 function chips(el,from,to,cb){ const box=$(el); box.innerHTML=''; for(let v=from;v<=to;v++){ const b=document.createElement('button'); b.className='chip'; b.textContent=v===to?v+'〜':v; b.onclick=()=>{ box.querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); b.classList.add('on'); cb(v); }; box.appendChild(b); } }
@@ -370,7 +371,7 @@ function toNow(t){
 function startQ(){
   if(selY===null||selK===null||selR===null){ $('ferr').textContent='3つとも選んでね'; return; }
   $('ferr').textContent='';
-  g=E.newGame(D); inGame=true; curTop=null; nAsk=0; aruN=0; aruGap=0; aruAsked={}; limit=10; guesses=0; qlog=[];
+  g=E.newGame(D); inGame=true; curTop=null; nAsk=0; aruN=0; aruGap=0; aruAsked={}; aruLog=[]; limit=10; guesses=0; qlog=[];
   firstLog='YK:'+selY+'-'+selK+',RG:'+selR;
   const YK=window.YK;
   g.post=g.post.map((w,i)=>{ const c=D.candidates[i]; if(c.decade!==NOWDEC) return 0; const yk=YK[c.sid]; if(!yk) return w*1e-6;
@@ -386,15 +387,19 @@ function startQ(){
 }
 let aruN=0, aruGap=0, aruAsked={}, aruCur=null;
 const ARU_TH=0.7, ARU_MAX=2;
-function aruPick(){ const t=E.top(D,g); if(!t||!t.sid) return null; const w=words(t.sid).find(x=>!aruAsked[t.sid+'|'+x]); return w?{sid:t.sid,word:w,prob:t.prob||0}:null; }
+function aruPick(){ const t=E.top(D,g); if(!t||!t.sid) return null; const un=x=>!aruAsked[t.sid+'|'+x];
+  const pend=(aruPend[t.sid]||[]).filter(un), base=words(t.sid).filter(un);
+  const w = (aruN>=1 && pend.length) ? pend[0] : (base[0]||pend[0]);   // 2問目は確かめ中の投稿を優先
+  return w?{sid:t.sid,word:w,prob:t.prob||0}:null; }
 function showAru(a){ aruCur=a; aruAsked[a.sid+'|'+a.word]=1; aruN++; aruGap=0;
   $('aruword').textContent='「'+a.word+'」？'; show('s-aru'); }
-function ansAru(a){ const c=aruCur; if(!c) return nextQ(); qlog.push('AR:'+a);
+function ansAru(a){ const c=aruCur; if(!c) return nextQ(); qlog.push('AR:'+a); aruLog.push({sid:c.sid,word:c.word,ans:a});
   if(a!=='unk'){ const hit=a==='yes'; g.post=g.post.map((w,i)=>w*(D.candidates[i].sid===c.sid ? (hit?.85:.15) : (hit?.12:.88)));
     const t=g.post.reduce((x,y)=>x+y,0)||1; g.post=g.post.map(w=>w/t); }
   aruCur=null; if(c.last) return doGuess(); nextQ(); }
 function nextQ(){
   const last = nAsk+2>=limit;
+  try{ const t0=E.top(D,g); if(t0&&t0.sid&&(t0.prob||0)>0.4) loadPend(t0.sid); }catch(e){}
   if(aruN<ARU_MAX && (aruN===0 || aruGap>=1)){
     const a=aruPick();
     if(a && (a.prob>=ARU_TH || (last && aruN===0))){ a.last=last; return showAru(a); }
@@ -418,7 +423,10 @@ function nextQ(){
 }
 function ans(a){ const q=D.questions[qi]; qlog.push(q.id+':'+a); E.answer(D,g,qi,a); nAsk++; aruGap++; nextQ(); }
 function doGuess(){ curTop=E.top(D,g); guesses++; const s=D.schools[curTop.sid]; $('gname').textContent=s.name; $('gsub').textContent=RG[regOf(curTop.sid)][0]+'の学校'; show('s-guess'); }
-function words(sid){ return (D.words[sid]||[]).map(w=>w.replace(/^\*/,'')).filter(Boolean).slice(0,8); }
+let ARU_EXTRA={}, aruPend={}, aruLog=[];
+setTimeout(()=>gas('getAruAll',{},r=>{ if(r&&typeof r==='object') ARU_EXTRA=r; }),500);
+function words(sid){ const a=(ARU_EXTRA[sid]||[]).concat((D.words[sid]||[]).map(w=>w.replace(/^\*/,''))).filter(Boolean); return [...new Set(a)].slice(0,8); }
+function loadPend(sid){ if(aruPend[sid]) return; aruPend[sid]=[]; gas('getAruPending',{sid,client:clientId()},r=>{ aruPend[sid]=(r||[]).map(x=>x.text).filter(Boolean); }); }
 function fillAru(el,box,sid){ const ws=words(sid); $(box).innerHTML=ws.map(w=>'<span>'+esc(w)+'</span>').join(''); $(el).style.display=ws.length?'':'none'; }
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 const URL0='https://at-works-jp.github.io/dokoko/now/';
