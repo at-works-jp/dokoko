@@ -37,6 +37,11 @@ h1 small{display:block;font-size:14px;color:var(--pinkD);letter-spacing:.2em}
 .btn:disabled{opacity:.4}
 .card{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:14px;margin:10px 0}
 .card h2{font-size:16px;margin:0 0 8px;font-weight:800}
+.pt{display:inline-block;font-size:12px;color:var(--mintD);background:#EEF8EC;border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:2px}
+.plus{background:#EEF8EC;color:#3E7A36;border-radius:14px;padding:10px;text-align:center;font-weight:800;margin:10px 0 4px}
+.rst{text-align:center;font-size:14px;margin:4px 0 10px;line-height:1.6}
+.tabs{display:flex;gap:6px;margin:6px 0 10px}.tabs button{flex:1;border:2px solid var(--line);background:#fff;border-radius:12px;padding:8px;font:inherit;color:var(--ink);cursor:pointer}.tabs button.on{background:var(--pink);border-color:var(--pinkD)}
+.rk{display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid var(--line);font-size:15px}.rk .no{width:34px;font-weight:800;color:var(--pinkD)}.rk .nm{flex:1}.rk .ps{font-weight:800}.rk .nn{font-size:12px;color:var(--soft);width:56px;text-align:right}.rk.me{background:#FFF0F3;border-radius:10px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{border:2px solid var(--line);background:#fff;border-radius:12px;padding:8px 0;min-width:46px;font:inherit;font-size:16px;color:var(--ink);cursor:pointer;flex:1 0 46px}
 .chip.on{background:var(--mint);border-color:var(--mintD);color:#24401F;font-weight:800}
@@ -85,6 +90,7 @@ textarea,input[type=text]{width:100%;border:2px solid var(--line);border-radius:
   <p class="lead">質問に答えるだけで<br>あなたがいま通っている高校を<br>AIが当てにいきます</p>
   <button class="btn" onclick="go1()">はじめる</button>
   <p class="note" style="text-align:center">学校名や名前を入力することはありません</p>
+  <button class="btn ghost" onclick="showRank()">学校パワーランキング</button>
 </section>
 
 <!-- 最初の2つ -->
@@ -153,16 +159,19 @@ textarea,input[type=text]{width:100%;border:2px solid var(--line);border-radius:
   <img class="chara" src="img/atari.png" alt="">
   <h1 style="font-size:24px">当たった〜！！</h1>
   <p class="lead" id="hitsub"></p>
+  <div class="plus">あなたの学校に +1点</div>
+  <div class="rst" id="hitrst"></div>
   <div class="card" id="hitaru"><h2>この学校のあるある</h2><div class="aru" id="hitaruw"></div></div>
   <div class="card">
-    <h2>あなたの学校のあるある、教えて！</h2>
+    <h2>あなたの学校のあるある、教えて！<span class="pt">+3点</span></h2>
     <textarea id="aruin" rows="2" maxlength="40" placeholder="例：学年ごとにスリッパの色がちがう"></textarea>
     <div class="note">AIが「これはホント」と判断したら、この学校のあるあるに追加します</div>
     <div class="err" id="aruerr"></div>
     <button class="btn mint" onclick="postAru()">送る</button>
     <div class="ok" id="aruok"></div>
   </div>
-  <div class="card"><h2>友だちにも試してもらう</h2><button class="btn mint" onclick="imgShare('hit')">画像でシェア</button><div class="share" id="sharehit"></div><div id="imgbox-hit" style="display:none"><p class="note">画像を長押しして保存してね</p><img id="imgout-hit" style="width:100%;border-radius:12px"></div></div>
+  <div class="card"><h2>友だちにも試してもらう<span class="pt">友だちが遊ぶと+2点</span></h2><button class="btn mint" onclick="imgShare('hit')">画像でシェア</button><div class="share" id="sharehit"></div><div id="imgbox-hit" style="display:none"><p class="note">画像を長押しして保存してね</p><img id="imgout-hit" style="width:100%;border-radius:12px"></div></div>
+  <button class="btn ghost" onclick="showRank()">学校パワーランキングを見る</button>
   <button class="btn ghost" onclick="again()">もう一回あそぶ</button>
 </section>
 
@@ -171,7 +180,7 @@ textarea,input[type=text]{width:100%;border:2px solid var(--line);border-radius:
   <img class="chara" src="img/hazure.png" alt="">
   <div class="bub" id="missmsg"></div>
   <div class="card" id="missaru"><h2 id="missaruh"></h2><div class="aru" id="missaruw"></div></div>
-  <div class="card"><h2>まちがわれたことをシェア</h2><button class="btn mint" onclick="imgShare('miss')">画像でシェア</button><div class="share" id="sharemiss"></div><div id="imgbox-miss" style="display:none"><p class="note">画像を長押しして保存してね</p><img id="imgout-miss" style="width:100%;border-radius:12px"></div></div>
+  <div class="card"><h2>まちがわれたことをシェア</h2><div id="missgate" style="display:none"><p class="rst">いまのシェアは学校の点になりません<br>学校を教えてからシェアすると <b>+2点</b></p><button class="btn mint" onclick="gatePass(1)">学校を教える</button><button class="btn ghost" onclick="gatePass(0)">このままシェア</button></div><div id="missinner"><button class="btn mint" onclick="imgShare('miss')">画像でシェア</button><div class="share" id="sharemiss"></div></div><div id="imgbox-miss" style="display:none"><p class="note">画像を長押しして保存してね</p><img id="imgout-miss" style="width:100%;border-radius:12px"></div></div>
   <button class="btn mint" onclick="contQ()">まだ質問を続ける</button>
   <button class="btn ghost" onclick="showCands()">候補から選ぶ</button>
 </section>
@@ -198,16 +207,32 @@ textarea,input[type=text]{width:100%;border:2px solid var(--line);border-radius:
   <img class="chara" src="img/bikkuri.png" alt="">
   <h1 style="font-size:22px" id="thx"></h1>
   <p class="lead">教えてくれてありがとう！<br>次はぜったい当てられるように勉強します</p>
+  <div class="plus">あなたの学校に +1点</div>
+  <div class="rst" id="thxrst"></div>
   <div class="card" id="thxaru"><h2>この学校のあるある</h2><div class="aru" id="thxaruw"></div></div>
   <div class="card">
-    <h2>あなたの学校のあるある、教えて！</h2>
+    <h2>あなたの学校のあるある、教えて！<span class="pt">+3点</span></h2>
     <textarea id="aruin2" rows="2" maxlength="40" placeholder="例：文化祭の名前が独特"></textarea>
     <div class="note">AIが「これはホント」と判断したら、この学校のあるあるに追加します</div>
     <div class="err" id="aruerr2"></div>
     <button class="btn mint" onclick="postAru(2)">送る</button>
     <div class="ok" id="aruok2"></div>
   </div>
+  <div class="card"><h2>友だちにも試してもらう<span class="pt">友だちが遊ぶと+2点</span></h2><div class="share" id="sharepick"></div></div>
+  <button class="btn ghost" onclick="showRank()">学校パワーランキングを見る</button>
   <button class="btn ghost" onclick="again()">もう一回あそぶ</button>
+</section>
+
+<!-- 学校パワーランキング -->
+<section class="scr" id="s-rank">
+  <h1 style="font-size:24px">学校パワーランキング</h1>
+  <p class="lead" id="rtotal"></p>
+  <div class="rst" id="rmine"></div>
+  <div class="tabs" id="rtabs"><button id="rt-p" onclick="rankTab('p')">自分の県</button><button id="rt-a" onclick="rankTab('a')">全国</button></div>
+  <div class="card" id="rlistbox"><div id="rlist2"></div></div>
+  <div class="card"><h2>学校パワーのため方</h2><div style="font-size:14px;line-height:1.9">・最後まで遊ぶと 1点<br>・シェアして友だちが遊ぶと 1人につき2点<br>・学校のあるあるを書くと 3点</div>
+  <div class="note">全体で100人をこえたら公開します<br>2人以上が参戦した学校だけをのせます</div></div>
+  <button class="btn ghost" onclick="again()">もどる</button>
 </section>
 
 <div class="foot">大人向けの<a href="../?ref=now">どこ高？（卒業生版）</a>もあるよ</div>
@@ -265,7 +290,26 @@ let inGame=false;
 function quitSend(reason){ if(!inGame) return; inGame=false; let top=''; try{ top=curTop?curTop.sid:E.top(D,g).sid; }catch(e){}
   gas('recordQuit',{reason,ref:REF,n:nAsk+2,guesses,top,answers:[firstLog].concat(qlog).join(','),client:clientId()}); }
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden') quitSend('とちゅうで画面をとじた'); });
-function record(sid,win){ inGame=false; const s=D.schools[sid]||{}; gas('recordResult',{sid,school:s.name||'',questions:nAsk+2,guesses,win:win?1:0,answers:[firstLog].concat(qlog).join(','),client:clientId(),ref:REF,grad:'現役'}); }
+const REGION_NAME={"gifu": "岐阜市", "gifupref": "岐阜県（岐阜市以外）", "aichi": "愛知県", "mie": "三重県", "toyama": "富山県", "ishikawa": "石川県", "fukui": "福井県", "shiga": "滋賀県", "kyoto": "京都府", "nara": "奈良県", "wakayama": "和歌山県", "kobe": "神戸市", "hyogopref": "兵庫県（神戸市以外）", "osaka": "大阪市", "osakapref": "大阪府（大阪市以外）", "tottori": "鳥取県", "shimane": "島根県", "okayama": "岡山県", "hiroshima": "広島県", "yamaguchi": "山口県", "kagawa": "香川県", "tokushima": "徳島県", "ehime": "愛媛県", "kochi": "高知県", "fukuoka": "福岡県", "saga": "佐賀県", "nagasaki": "長崎県", "kumamoto": "熊本市", "kumamotopref": "熊本県（熊本市以外）", "oita": "大分県", "miyazaki": "宮崎県", "kagoshima": "鹿児島県", "okinawa": "沖縄県", "shizuoka": "静岡県", "nagano": "長野県", "niigata": "新潟県", "yamanashi": "山梨県", "kanagawa": "神奈川県", "tokyo": "東京都", "saitama": "埼玉県", "chiba": "千葉県", "ibaraki": "茨城県", "tochigi": "栃木県", "gunma": "群馬県", "miyagi": "宮城県", "fukushima": "福島県", "yamagata": "山形県", "iwate": "岩手県", "akita": "秋田県", "aomori": "青森県", "hokkaido": "北海道"};
+const CITY_PREF={gifu:'岐阜県',kobe:'兵庫県',osaka:'大阪府',kumamoto:'熊本県'};
+function prefLabel(r){ return CITY_PREF[r] || String(REGION_NAME[r]||'').replace(/（.*）/,''); }
+function scode(sid){ let h=0x811c9dc5; const t='dk'+sid; for(let i=0;i<t.length;i++){ h^=t.charCodeAt(i); h=Math.imul(h,0x01000193)>>>0; } return ('000000'+h.toString(36)).slice(-6); }
+function mySid(){ try{ return localStorage.getItem('dokoko-now-sid')||''; }catch(e){ return ''; } }
+function rankMsg(R){ if(!R) return ''; if(!R.open) return 'ランキングは'+R.need+'人で公開　いま'+R.total+'人';
+  if(!R.mine) return ''; return R.mine.listed ? 'あなたの学校はいま<b>'+R.mine.rank+'位</b>' : 'あなたの学校はまだランキングにのっていません<br>あと1人参戦でのります'; }
+function loadStatus(el){ $(el).innerHTML=''; setTimeout(()=>gas('getNowRanking',{sid:mySid()},R=>{ $(el).innerHTML=rankMsg(R); }),2500); }
+let RK=null, RKTAB='p';
+function showRank(){ show('s-rank'); $('rtotal').textContent='読みこみ中…'; $('rmine').innerHTML=''; $('rlist2').innerHTML='';
+  gas('getNowRanking',{sid:mySid()},R=>{ RK=R; $('rtotal').textContent='いま'+R.total+'人が参戦中'; $('rmine').innerHTML=rankMsg(R);
+    const ms=mySid(); RKTAB=ms&&D.schools[ms]?'p':'a'; rankTab(RKTAB); }); }
+function rankTab(t){ RKTAB=t; $('rt-p').className=t==='p'?'on':''; $('rt-a').className=t==='a'?'on':''; const R=RK; if(!R) return;
+  const box=$('rlist2'); if(!R.open){ box.innerHTML='<p class="rst">参戦が'+R.need+'人をこえたら<br>ここにランキングが出ます</p>'; return; }
+  const ms=mySid(), mp=ms&&D.schools[ms]?prefLabel(D.schools[ms].region):'';
+  let L=R.list.filter(x=>D.schools[x.sid]); if(t==='p'&&mp) L=L.filter(x=>prefLabel(D.schools[x.sid].region)===mp);
+  $('rt-p').textContent=mp?mp:'自分の県';
+  box.innerHTML=L.length? L.slice(0,50).map((x,i)=>'<div class="rk'+(x.sid===ms?' me':'')+'"><span class="no">'+(i+1)+'</span><span class="nm">'+esc(D.schools[x.sid].name)+'</span><span class="ps">'+x.pts+'点</span><span class="nn">'+x.n+'人</span></div>').join('') : '<p class="rst">まだのっている学校がありません</p>'; }
+function gatePass(teach){ try{ localStorage.setItem('dokoko-now-gate','1'); }catch(e){} $('missgate').style.display='none'; $('missinner').style.display=''; if(teach) showCands(); }
+function record(sid,win){ inGame=false; try{ localStorage.setItem('dokoko-now-sid',sid); }catch(e){} const s=D.schools[sid]||{}; gas('recordResult',{sid,school:s.name||'',questions:nAsk+2,guesses,win:win?1:0,answers:[firstLog].concat(qlog).join(','),client:clientId(),ref:REF,grad:'現役'}); }
 
 // ---- 最初の画面 ----
 function chips(el,from,to,cb){ const box=$(el); box.innerHTML=''; for(let v=from;v<=to;v++){ const b=document.createElement('button'); b.className='chip'; b.textContent=v===to?v+'〜':v; b.onclick=()=>{ box.querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); b.classList.add('on'); cb(v); }; box.appendChild(b); } }
@@ -345,11 +389,13 @@ let aruSid=null;
 function judge(hit){
   const sid=curTop.sid;
   if(hit){ aruSid=sid; record(sid,true); $('hitsub').textContent=(nAsk+2)+'問で当てたよ！'; fillAru('hitaru','hitaruw',sid); $('aruok').textContent=''; $('aruin').value='';
-    shareBox('sharehit','AIに通ってる高校を当てられた…！あなたも当てられる？','share-hit'); show('s-hit'); return; }
+    shareBox('sharehit','AIに通ってる高校を当てられた…！あなたも当てられる？','share-hit.'+scode(sid)); loadStatus('hitrst'); show('s-hit'); return; }
   E.exclude(D,g,sid);
   const nm=D.schools[sid].name;
   $('missmsg').innerHTML='くっ…！<br>AIはあなたを<b>「'+esc(nm)+'」</b>の生徒だと思いました…';
   $('missaruh').textContent=nm+'のあるある'; fillAru('missaru','missaruw',sid);
+  let gated=false; try{ gated=!!localStorage.getItem('dokoko-now-gate'); }catch(e){}
+  $('missgate').style.display=gated?'none':''; $('missinner').style.display=gated?'':'none';
   shareBox('sharemiss','AIに「'+nm+'の生徒っぽい」って言われた笑（ほんとはちがう高校なのに） あなたはなに高っぽい？','share-miss');
   show('s-miss');
 }
@@ -367,7 +413,8 @@ function doSearch(){
   const hit=[]; for(const sid of NOWSET){ const n=D.schools[sid].name; if(n.indexOf(q)>=0) hit.push(sid); if(hit.length>=12) break; }
   $('sres').innerHTML=hit.length? hit.map(sid=>'<button class="cand" onclick="picked(\''+sid+'\')">'+esc(D.schools[sid].name)+'<small>'+RG[regOf(sid)][0]+'</small></button>').join('') : '<p class="note">見つからない…。ちがう書き方でもためしてみてね</p>';
 }
-function picked(sid){ aruSid=sid; record(sid,false); $('thx').textContent='「'+D.schools[sid].name+'」だったのか…！'; fillAru('thxaru','thxaruw',sid); $('aruok2').textContent=''; $('aruin2').value=''; show('s-thanks'); }
+function picked(sid){ aruSid=sid; record(sid,false); $('thx').textContent='「'+D.schools[sid].name+'」だったのか…！'; fillAru('thxaru','thxaruw',sid); $('aruok2').textContent=''; $('aruin2').value='';
+  shareBox('sharepick','AIに通ってる高校を当ててもらうゲームやってみた　あなたは当てられる？','share-pick.'+scode(sid)); loadStatus('thxrst'); show('s-thanks'); }
 function postAru(k){ const sfx=k===2?'2':''; const t=$('aruin'+sfx).value.trim();
   if(!t){ $('aruerr'+sfx).textContent='あるあるを書いてね'; return; } $('aruerr'+sfx).textContent='';
   const s=D.schools[aruSid]||{}; gas('postAruaru',{sid:aruSid,school:s.name||'',text:t,grad:'現役',client:clientId()});
@@ -393,7 +440,7 @@ async function makeImg(kind){
 }
 async function imgShare(kind){
   lsh('img-'+kind); const c=await makeImg(kind);
-  const tx=(kind==='hit'?'AIに通ってる高校を当てられた…！あなたも当てられる？':'AIに「'+D.schools[curTop.sid].name+'の生徒っぽい」って言われた笑（ほんとはちがう高校なのに） あなたはなに高っぽい？')+'\n#どこ高 #高校あるある\n'+URL0+'?ref=share-img';
+  const tx=(kind==='hit'?'AIに通ってる高校を当てられた…！あなたも当てられる？':'AIに「'+D.schools[curTop.sid].name+'の生徒っぽい」って言われた笑（ほんとはちがう高校なのに） あなたはなに高っぽい？')+'\n#どこ高 #高校あるある\n'+URL0+'?ref='+(kind==='hit'?'share-img.'+scode(curTop.sid):'share-img');
   try{ const blob=await new Promise(r=>c.toBlob(r,'image/png')); const file=new File([blob],'dokoko-now.png',{type:'image/png'});
     if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],text:tx}); return; } }catch(e){ if(e&&e.name==='AbortError') return; }
   $('imgout-'+kind).src=c.toDataURL('image/png'); $('imgbox-'+kind).style.display=''; try{ await navigator.clipboard.writeText(tx); }catch(e){}

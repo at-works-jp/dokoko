@@ -668,6 +668,7 @@ $('wrongBtn').onclick=()=>{
   }; loop();
 };
 const REGION_NAME={"gifu": "岐阜市", "gifupref": "岐阜県（岐阜市以外）", "aichi": "愛知県", "mie": "三重県", "toyama": "富山県", "ishikawa": "石川県", "fukui": "福井県", "shiga": "滋賀県", "kyoto": "京都府", "nara": "奈良県", "wakayama": "和歌山県", "kobe": "神戸市", "hyogopref": "兵庫県（神戸市以外）", "osaka": "大阪市", "osakapref": "大阪府（大阪市以外）", "tottori": "鳥取県", "shimane": "島根県", "okayama": "岡山県", "hiroshima": "広島県", "yamaguchi": "山口県", "kagawa": "香川県", "tokushima": "徳島県", "ehime": "愛媛県", "kochi": "高知県", "fukuoka": "福岡県", "saga": "佐賀県", "nagasaki": "長崎県", "kumamoto": "熊本市", "kumamotopref": "熊本県（熊本市以外）", "oita": "大分県", "miyazaki": "宮崎県", "kagoshima": "鹿児島県", "okinawa": "沖縄県", "shizuoka": "静岡県", "nagano": "長野県", "niigata": "新潟県", "yamanashi": "山梨県", "kanagawa": "神奈川県", "tokyo": "東京都", "saitama": "埼玉県", "chiba": "千葉県", "ibaraki": "茨城県", "tochigi": "栃木県", "gunma": "群馬県", "miyagi": "宮城県", "fukushima": "福島県", "yamagata": "山形県", "iwate": "岩手県", "akita": "秋田県", "aomori": "青森県", "hokkaido": "北海道"};
+function scode(sid){ let h=0x811c9dc5; const t='dk'+sid; for(let i=0;i<t.length;i++){ h^=t.charCodeAt(i); h=Math.imul(h,0x01000193)>>>0; } return ('000000'+h.toString(36)).slice(-6); }
 const APP_URL='https://at-works-jp.github.io/dokoko/';
 function setLine(txt){ const a=$('lineBtn'); if(a) a.href='https://line.me/R/share?text='+encodeURIComponent(txt); const x=$('xBtn'); if(x) x.href='https://x.com/intent/post?text='+encodeURIComponent(txt+'\n#どこ高 #高校あるある'); }
 const CITY_PREF={gifu:'岐阜県',kobe:'兵庫県',osaka:'大阪府',kumamoto:'熊本県'};
@@ -718,7 +719,7 @@ function end(win,t){
       if(f) my=`<b style="color:var(--ink)">${esc(nm(f))}</b>だと思っていました`; } }catch(e){}
   $('mayoi').innerHTML=my;
   try{ localStorage.setItem('koukou-last-sid', t.sid); }catch(e){}
-  const txt = '「どこ高？」\n'+tateLines(win, g.n, dv).join('\n')+'\n'+APP_URL;
+  const txt = '「どこ高？」\n'+tateLines(win, g.n, dv).join('\n')+'\n'+APP_URL+'?ref=share.'+scode(t.sid);
   LAST={win, n:g.n, dv, txt}; $('imgBox').style.display='none';
   $('bokouBtn').style.display = (STAGE.openAll || bokouOk()) ? '' : 'none';
   $('shareText').textContent=txt; setLine(txt);
