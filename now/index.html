@@ -160,7 +160,7 @@ textarea,input[type=text]{width:100%;border:2px solid var(--line);border-radius:
 <!-- あるある質問 -->
 <section class="scr" id="s-aru">
   <img class="chara" src="img/jishin.png" alt="">
-  <div class="bub" style="text-align:center">ねえ、もしかして…<div id="aruword" style="font-size:22px;font-weight:800;color:#D9506E;margin-top:6px;line-height:1.5"></div></div>
+  <div class="bub" style="text-align:center"><span id="arupre">ねえ、もしかして…</span><div id="aruword" style="font-size:22px;font-weight:800;color:#D9506E;margin-top:6px;line-height:1.5"></div></div>
   <button class="btn mint" style="font-size:19px;padding:16px" onclick="ansAru('yes')">え、なんで知ってるの！？</button>
   <div class="ans">
     <button class="btn" onclick="ansAru('no')">ちがうよ</button>
@@ -371,7 +371,7 @@ function toNow(t){
 function startQ(){
   if(selY===null||selK===null||selR===null){ $('ferr').textContent='3つとも選んでね'; return; }
   $('ferr').textContent='';
-  g=E.newGame(D); inGame=true; curTop=null; nAsk=0; aruN=0; aruGap=0; aruAsked={}; aruLog=[]; limit=10; guesses=0; qlog=[];
+  g=E.newGame(D); inGame=true; curTop=null; nAsk=0; aruN=0; aruGap=0; aruAsked={}; aruLog=[]; aruRound=0; afterMiss=false; limit=10; guesses=0; qlog=[];
   firstLog='YK:'+selY+'-'+selK+',RG:'+selR;
   const YK=window.YK;
   g.post=g.post.map((w,i)=>{ const c=D.candidates[i]; if(c.decade!==NOWDEC) return 0; const yk=YK[c.sid]; if(!yk) return w*1e-6;
@@ -385,25 +385,23 @@ function startQ(){
   g.n=10; g._nqN=-1;  // 地名の質問も早めに出せるように（試算で10問めの正解率 約54%）
   nextQ();
 }
-let aruN=0, aruGap=0, aruAsked={}, aruCur=null;
+let aruN=0, aruGap=0, aruAsked={}, aruCur=null, aruRound=0, afterMiss=false;
 const ARU_TH=0.7, ARU_MAX=2;
 function aruPick(){ const t=E.top(D,g); if(!t||!t.sid) return null; const un=x=>!aruAsked[t.sid+'|'+x];
-  const pend=(aruPend[t.sid]||[]).filter(un), base=words(t.sid).filter(un);
-  const w = (aruN>=1 && pend.length) ? pend[0] : (base[0]||pend[0]);   // 2問目は確かめ中の投稿を優先
+  const now=x=>!OLD_RE.test(x), pend=(aruPend[t.sid]||[]).filter(un).filter(now), base=words(t.sid).filter(un).filter(now);
+  const w = (aruRound>=1 && pend.length) ? pend[0] : (base[0]||pend[0]);   // 2問目は確かめ中の投稿を優先
   return w?{sid:t.sid,word:w,prob:t.prob||0}:null; }
-function showAru(a){ aruCur=a; aruAsked[a.sid+'|'+a.word]=1; aruN++; aruGap=0;
-  $('aruword').textContent='「'+a.word+'」？'; show('s-aru'); }
+function showAru(a){ aruCur=a; aruAsked[a.sid+'|'+a.word]=1; aruN++; aruRound++; aruGap=0;
+  $('arupre').textContent=a.mode==='miss'?'じゃあ…もしかして':'ねえ、もしかして…'; $('aruword').textContent='「'+a.word+'」？'; show('s-aru'); }
 function ansAru(a){ const c=aruCur; if(!c) return nextQ(); qlog.push('AR:'+a); aruLog.push({sid:c.sid,word:c.word,ans:a});
   if(a!=='unk'){ const hit=a==='yes'; g.post=g.post.map((w,i)=>w*(D.candidates[i].sid===c.sid ? (hit?.85:.15) : (hit?.12:.88)));
     const t=g.post.reduce((x,y)=>x+y,0)||1; g.post=g.post.map(w=>w/t); }
-  aruCur=null; if(c.last) return doGuess(); nextQ(); }
+  aruCur=null; if(c.mode==='miss' && a==='yes' && (E.top(D,g).prob||0)>=0.5) return doGuess(); nextQ(); }
 function nextQ(){
   const last = nAsk+2>=limit;
-  try{ const t0=E.top(D,g); if(t0&&t0.sid&&(t0.prob||0)>0.4) loadPend(t0.sid); }catch(e){}
-  if(aruN<ARU_MAX && (aruN===0 || aruGap>=1)){
-    const a=aruPick();
-    if(a && (a.prob>=ARU_TH || (last && aruN===0))){ a.last=last; return showAru(a); }
-  }
+  try{ const t0=E.top(D,g); if(t0&&t0.sid&&(t0.prob||0)>0.25) loadPend(t0.sid); }catch(e){}
+  if(afterMiss){ afterMiss=false; const a=aruPick(); if(a){ a.mode='miss'; return showAru(a); } }   // 外れたあとは2位の学校のあるあるから
+  if(last && aruRound<ARU_MAX){ const a=aruPick(); if(a){ a.last=true; return showAru(a); } }      // あるある質問は予想の直前にまとめる
   if(last){ return doGuess(); }
   qi=E.nextQuestion(D,g);
   for(let k=0;k<30&&qi!==null&&qi!==undefined;k++){   // 答えがほぼ決まっている質問（例：岐阜市にある→東海三県）は出さない
@@ -425,7 +423,9 @@ function ans(a){ const q=D.questions[qi]; qlog.push(q.id+':'+a); E.answer(D,g,qi
 function doGuess(){ curTop=E.top(D,g); guesses++; const s=D.schools[curTop.sid]; $('gname').textContent=s.name; $('gsub').textContent=RG[regOf(curTop.sid)][0]+'の学校'; show('s-guess'); }
 let ARU_EXTRA={}, aruPend={}, aruLog=[];
 setTimeout(()=>gas('getAruAll',{},r=>{ if(r&&typeof r==='object') ARU_EXTRA=r; }),500);
-function words(sid){ const a=(ARU_EXTRA[sid]||[]).concat((D.words[sid]||[]).map(w=>w.replace(/^\*/,''))).filter(Boolean); return [...new Set(a)].slice(0,8); }
+const OLD_RE=/時代|昔|かつて|旧|当時|廃止|以前|元々|もともと|だった|でした|年まで|年頃|年ごろ/;   // 昔の話題（あるある質問には出さない）
+function words(sid){ const a=[...new Set((ARU_EXTRA[sid]||[]).concat((D.words[sid]||[]).map(w=>w.replace(/^\*/,''))).filter(Boolean))];
+  return a.filter(w=>!OLD_RE.test(w)).concat(a.filter(w=>OLD_RE.test(w))).slice(0,8); }
 function loadPend(sid){ if(aruPend[sid]) return; aruPend[sid]=[]; gas('getAruPending',{sid,client:clientId()},r=>{ aruPend[sid]=(r||[]).map(x=>x.text).filter(Boolean); }); }
 function fillAru(el,box,sid){ const ws=words(sid); $(box).innerHTML=ws.map(w=>'<span>'+esc(w)+'</span>').join(''); $(el).style.display=ws.length?'':'none'; }
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -446,7 +446,7 @@ function judge(hit){
   shareBox('sharemiss','AIに「'+nm+'の生徒っぽい」って言われた笑（ほんとはちがう高校なのに） あなたはなに高っぽい？','share-miss');
   show('s-miss');
 }
-function contQ(){ limit=nAsk+2+5; nextQ(); }
+function contQ(){ limit=nAsk+2+5; aruRound=0; afterMiss=true; nextQ(); }
 function showCands(){
   const m=E.schoolMarg(D,g.post).filter(x=>!g.excluded.has(x[0])).sort((a,b)=>b[1]-a[1]).slice(0,10);
   $('candlist').innerHTML=m.map(([sid])=>'<button class="cand" onclick="picked(\''+sid+'\')">'+esc(D.schools[sid].name)+'</button>').join('');
