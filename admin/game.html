@@ -41,6 +41,7 @@
       <input id="pass" type="password" placeholder="運営の合言葉">
       <button id="go">読みこむ</button>
       <label class="sub"><input type="checkbox" id="exOwn" checked> 運営の端末の記録を除く</label>
+      <select id="ver"><option value="">両方の版</option><option value="main">母校版</option><option value="now">現役生版</option></select>
       <select id="range"><option value="0">全期間</option><option value="1">今日</option><option value="7">直近7日</option><option value="30">直近30日</option></select>
       <span id="msg" class="sub"></span>
     </div>
@@ -69,7 +70,7 @@ const decQ=s=>String(s).replace(/-([0-9a-z]+)/g,(m,x)=>String.fromCodePoint(pars
 const prefOf=sid=>{ const s=G.schools[sid]; return s?(REG[s.region]||s.region||'不明'):'不明'; };
 let RAW=null;
 (function(){ const q=new URLSearchParams(location.search).get('o'); let p=q||''; if(!p){ try{ p=localStorage.getItem('koukou-admin')||''; }catch(e){} } $('pass').value=p; if(p) load(); })();
-$('go').onclick=load; $('exOwn').onchange=()=>RAW&&render(); $('range').onchange=()=>RAW&&render();
+$('go').onclick=load; $('exOwn').onchange=()=>RAW&&render(); $('range').onchange=()=>RAW&&render(); $('ver').onchange=()=>RAW&&render();
 function load(){ const pass=$('pass').value.trim(); if(!pass){ $('msg').textContent='合言葉を入れてください'; return; } $('msg').textContent='読みこみ中…（少し時間がかかります）';
   fetch(API,{method:'POST',body:JSON.stringify({fn:'getGameStats',args:[{pass}]})}).then(r=>r.json()).then(j=>{
     if(!j||!j.ok||!j.r||!j.r.ok){ $('msg').textContent=(j&&j.r&&j.r.msg)||'読みこめませんでした'; return; }
@@ -96,6 +97,9 @@ function render(){
   const Q=RAW.quits.map(r=>({t:r[0],why:r[1],q:+r[2],gs:+r[3],c:r[4],ref:r[5]})).filter(o=>ok(o.t,o.c));
   const S=RAW.shares.map(r=>({t:r[0],k:r[1],c:r[2],win:+r[3],q:+r[4]})).filter(o=>ok(o.t,o.c));
   const P=RAW.posts.map(r=>({t:r[0],sid:r[1],text:r[2],grad:r[3],c:r[4]})).filter(o=>ok(o.t,o.c));
+  const VER=$('ver').value; if(VER){ const isNow=VER==='now', vk=(b)=>b===isNow;
+    [[R,o=>String(o.ref||'').startsWith('now:')||o.grad==='現役'],[A,o=>o.ans.startsWith('YK:')],[Q,o=>String(o.ref||'').startsWith('now:')],[S,o=>String(o.k||'').startsWith('now-')],[P,o=>o.grad==='現役']]
+      .forEach(([arr,f])=>{ const keep=arr.filter(o=>vk(!!f(o))); arr.length=0; keep.forEach(x=>arr.push(x)); }); }
   const win=R.filter(o=>o.win), w1=win.filter(o=>o.gs===1);
   const devs=new Set(R.map(o=>o.c));
   let h=`<div class="kpis" style="margin-top:12px">${[kpi(R.length,'遊ばれた回数'),kpi(devs.size,'遊んだ端末'),kpi(new Set(R.map(o=>o.sid)).size,'遊ばれた学校'),kpi(new Set(win.map(o=>o.sid)).size,'当たった学校'),

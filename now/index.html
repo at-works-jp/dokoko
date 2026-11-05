@@ -261,7 +261,11 @@ const GAS_API='https://script.google.com/macros/s/AKfycbwvDe4IB8MTCbk8fFIwR8zSEF
 function gas(fn,arg,ok){ if(!/^https?:/.test(location.protocol)) return; try{ fetch(GAS_API,{method:'POST',keepalive:true,body:JSON.stringify({fn,args:[arg]})}).then(r=>r.json()).then(j=>{ if(j&&j.ok&&ok) ok(j.r); }).catch(()=>{}); }catch(e){} }
 const INAPP=(()=>{ const ua=navigator.userAgent||''; if(/musical_ly|TikTok|BytedanceWebview|ByteLocale/i.test(ua)) return 'TikTok'; if(/Line\//i.test(ua)) return 'LINE'; if(/Instagram/i.test(ua)) return 'Instagram'; if(/FBAN|FBAV/.test(ua)) return 'Facebook'; if(/Twitter/i.test(ua)) return 'X'; return ''; })();
 const REF=(()=>{ const tag=INAPP?' @'+INAPP:''; try{ const q=new URLSearchParams(location.search).get('ref'); let r=(q!==null)?q:(document.referrer||''); if(!r) return 'now:(なし)'+tag; try{ r=new URL(r).hostname||r; }catch(e){} if(r===location.hostname) return 'now:(なし)'+tag; return 'now:'+String(r).slice(0,44)+tag; }catch(e){ return 'now:'+tag.trim(); } })();
-function record(sid,win){ const s=D.schools[sid]||{}; gas('recordResult',{sid,school:s.name||'',questions:nAsk+2,guesses,win:win?1:0,answers:[firstLog].concat(qlog).join(','),client:clientId(),ref:REF,grad:'現役'}); }
+let inGame=false;
+function quitSend(reason){ if(!inGame) return; inGame=false; let top=''; try{ top=curTop?curTop.sid:E.top(D,g).sid; }catch(e){}
+  gas('recordQuit',{reason,ref:'now:'+REF,n:nAsk+2,guesses,top,answers:[firstLog].concat(qlog).join(','),client:clientId()}); }
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden') quitSend('とちゅうで画面をとじた'); });
+function record(sid,win){ inGame=false; const s=D.schools[sid]||{}; gas('recordResult',{sid,school:s.name||'',questions:nAsk+2,guesses,win:win?1:0,answers:[firstLog].concat(qlog).join(','),client:clientId(),ref:REF,grad:'現役'}); }
 
 // ---- 最初の画面 ----
 function chips(el,from,to,cb){ const box=$(el); box.innerHTML=''; for(let v=from;v<=to;v++){ const b=document.createElement('button'); b.className='chip'; b.textContent=v===to?v+'〜':v; b.onclick=()=>{ box.querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); b.classList.add('on'); cb(v); }; box.appendChild(b); } }
@@ -300,7 +304,7 @@ function toNow(t){
 function startQ(){
   if(selY===null||selK===null||selR===null){ $('ferr').textContent='3つとも選んでね'; return; }
   $('ferr').textContent='';
-  g=E.newGame(D); nAsk=0; limit=10; guesses=0; qlog=[];
+  g=E.newGame(D); inGame=true; curTop=null; nAsk=0; limit=10; guesses=0; qlog=[];
   firstLog='YK:'+selY+'-'+selK+',RG:'+selR;
   const YK=window.YK;
   g.post=g.post.map((w,i)=>{ const c=D.candidates[i]; if(c.decade!==NOWDEC) return 0; const yk=YK[c.sid]; if(!yk) return w*1e-6;
@@ -335,7 +339,8 @@ function words(sid){ return (D.words[sid]||[]).map(w=>w.replace(/^\*/,'')).filte
 function fillAru(el,box,sid){ const ws=words(sid); $(box).innerHTML=ws.map(w=>'<span>'+esc(w)+'</span>').join(''); $(el).style.display=ws.length?'':'none'; }
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 const URL0='https://at-works-jp.github.io/dokoko/now/';
-function shareBox(el,text,ref){ const u=URL0+'?ref='+ref; $(el).innerHTML='<a class="line" target="_blank" href="https://line.me/R/share?text='+encodeURIComponent(text+'\n'+u)+'">LINEで送る</a><a class="x" target="_blank" href="https://x.com/intent/post?text='+encodeURIComponent(text+'\n#どこ高 #高校あるある\n'+u)+'">Xにポスト</a>'; }
+function lsh(kind){ gas('logShare',{kind:'now-'+kind,client:clientId(),win:kind.indexOf('hit')>=0?1:0,n:nAsk+2}); }
+function shareBox(el,text,ref){ const u=URL0+'?ref='+ref, tg=ref.replace('share-',''); $(el).innerHTML='<a class="line" onclick="lsh(\'line-'+tg+'\')" target="_blank" href="https://line.me/R/share?text='+encodeURIComponent(text+'\n'+u)+'">LINEで送る</a><a class="x" onclick="lsh(\'x-'+tg+'\')" target="_blank" href="https://x.com/intent/post?text='+encodeURIComponent(text+'\n#どこ高 #高校あるある\n'+u)+'">Xにポスト</a>'; }
 let aruSid=null;
 function judge(hit){
   const sid=curTop.sid;
@@ -387,13 +392,13 @@ async function makeImg(kind){
   return c;
 }
 async function imgShare(kind){
-  const c=await makeImg(kind);
+  lsh('img-'+kind); const c=await makeImg(kind);
   const tx=(kind==='hit'?'AIに通ってる高校を当てられた…！あなたも当てられる？':'AIに「'+D.schools[curTop.sid].name+'の生徒っぽい」って言われた笑（ほんとはちがう高校なのに） あなたはなに高っぽい？')+'\n#どこ高 #高校あるある\n'+URL0+'?ref=share-img';
   try{ const blob=await new Promise(r=>c.toBlob(r,'image/png')); const file=new File([blob],'dokoko-now.png',{type:'image/png'});
     if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],text:tx}); return; } }catch(e){ if(e&&e.name==='AbortError') return; }
   $('imgout-'+kind).src=c.toDataURL('image/png'); $('imgbox-'+kind).style.display=''; try{ await navigator.clipboard.writeText(tx); }catch(e){}
 }
-function again(){ show('s-start'); }
+function again(){ const on=(document.querySelector('.scr.on')||{}).id||''; quitSend(/s-(miss|cand|search)/.test(on)?'答えを教えずに終了':'ホームにもどった'); show('s-start'); }
 </script>
 </body>
 </html>
