@@ -21,6 +21,12 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"M PLUS Rounded 
 .chara.sm{width:110px;height:110px}
 .bub{position:relative;background:var(--card);border:2px solid var(--line);border-radius:18px;padding:12px 14px;margin:6px 0 12px;line-height:1.7;font-size:15px}
 .bub:before{content:"";position:absolute;top:-10px;left:50%;margin-left:-9px;border:9px solid transparent;border-top:0;border-bottom-color:var(--line)}
+.bub.plea{background:#FFF0F3;border:3px solid var(--pinkD);font-size:17px;font-weight:800;line-height:1.75;padding:14px 16px;box-shadow:0 4px 0 #F3C2CD}
+.bub.plea:before{top:-12px;margin-left:-11px;border-width:11px;border-top:0;border-bottom-color:var(--pinkD)}
+.bub.plea em{font-style:normal;color:#D9506E}
+.bub.plea .beg{display:block;text-align:center;font-size:26px;color:#D9506E;margin-top:6px;animation:beg 1.6s ease-in-out infinite}
+@keyframes beg{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+#cy .chip{flex:1 0 calc(20% - 6px)}
 h1{font-weight:800;font-size:26px;text-align:center;margin:8px 0 2px;letter-spacing:.02em}
 h1 small{display:block;font-size:14px;color:var(--pinkD);letter-spacing:.2em}
 .lead{text-align:center;color:var(--soft);font-size:14px;margin:0 0 14px}
@@ -84,7 +90,7 @@ textarea,input[type=text]{width:100%;border:2px solid var(--line);border-radius:
 <!-- 最初の2つ -->
 <section class="scr" id="s-first">
   <img class="chara sm" src="img/please.png" alt="">
-  <div class="bub">待って、高校って全国に5,400校もあるんだけど…<br>正直、ここから当てるのはムリ。ほんとにムリ。<br>でも10問で当てたい。どうしても当てたい。<br>だから最初に、この2つだけ教えて…たのむ…！</div>
+  <div class="bub plea">待って、高校って全国に<br><em>5,400校</em>もあるんだけど…<br>正直、ここから当てるのは<em>ムリ。</em><br><em>ほんとにムリ。</em><br>でも10問で当てたい。<br>どうしても当てたい。<br>だから最初に、この2つだけ教えて…<span class="beg">たのむ…！</span></div>
 
   <div class="card">
     <h2>① 学校名は何文字？</h2>
@@ -259,7 +265,7 @@ function record(sid,win){ const s=D.schools[sid]||{}; gas('recordResult',{sid,sc
 
 // ---- 最初の画面 ----
 function chips(el,from,to,cb){ const box=$(el); box.innerHTML=''; for(let v=from;v<=to;v++){ const b=document.createElement('button'); b.className='chip'; b.textContent=v===to?v+'〜':v; b.onclick=()=>{ box.querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); b.classList.add('on'); cb(v); }; box.appendChild(b); } }
-function go1(){ selY=selK=selR=null; chips('cy',2,10,v=>selY=v); chips('ck',1,6,v=>selK=v); buildRegions(); show('s-first'); setTimeout(drawMap,30); }
+function go1(){ selY=selK=selR=null; chips('cy',1,10,v=>selY=v); chips('ck',1,6,v=>selK=v); buildRegions(); show('s-first'); setTimeout(drawMap,30); }
 function buildRegions(){ const box=$('rlist'); box.innerHTML=''; RG.forEach((r,i)=>{ const b=document.createElement('button'); b.className='rbtn'; b.id='rb'+i; b.innerHTML='<b><i class="dot" style="background:'+r[1]+'"></i>'+r[0]+'</b><span>'+r[3]+'</span>'; b.onclick=()=>pickR(i); box.appendChild(b); }); }
 function pickR(i){ selR=i; document.querySelectorAll('.rbtn').forEach(b=>b.classList.remove('on')); $('rb'+i).classList.add('on'); drawMap(); }
 // 地図：学校の点を地方ごとの色でぬる。さわった場所のいちばん近い学校の地方を選ぶ
