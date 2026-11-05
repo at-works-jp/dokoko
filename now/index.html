@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>どこ高？現役生版</title>
-<meta name="description" content="10問で、あなたがいま通っている高校をAIが当てにいくゲーム">
+<meta name="description" content="10問くらいで、あなたがいま通っている高校をAIが当てにいくゲーム">
 <meta property="og:title" content="どこ高？現役生版">
-<meta property="og:description" content="10問で、あなたの高校をAIが当てにいく">
+<meta property="og:description" content="10問くらいで、あなたの高校をAIが当てにいく">
 <meta property="og:image" content="https://at-works-jp.github.io/dokoko/now/img/please.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
@@ -99,7 +99,7 @@ textarea,input[type=text]{width:100%;border:2px solid var(--line);border-radius:
 <!-- 最初の2つ -->
 <section class="scr" id="s-first">
   <img class="chara sm" src="img/please.png" alt="">
-  <div class="bub plea"><span class="sub">待って、高校って全国に</span><span class="big">5,400<small>校</small></span><span class="sub">もあるんだけど…</span><p>正直、ここから当てるのは<em>ムリ。</em><br><em>ほんとにムリ。</em></p><p>でも10問で当てたい。<br>どうしても当てたい。</p><p class="sub" style="display:block">だから最初に、この2つだけ教えて…</p><span class="beg">おねがいします…！</span></div>
+  <div class="bub plea"><span class="sub">待って、高校って全国に</span><span class="big">5,400<small>校</small></span><span class="sub">もあるんだけど…</span><p>正直、ここから当てるのは<em>ムリ。</em><br><em>ほんとにムリ。</em></p><p>でも10問くらいで当てたい。<br>どうしても当てたい。</p><p class="sub" style="display:block">だから最初に、この2つだけ教えて…</p><span class="beg">おねがいします…！</span></div>
 
   <div class="card">
     <h2>① 学校名は何文字？</h2>
@@ -157,6 +157,17 @@ textarea,input[type=text]{width:100%;border:2px solid var(--line);border-radius:
   </div>
 </section>
 
+<!-- あるある質問 -->
+<section class="scr" id="s-aru">
+  <img class="chara" src="img/jishin.png" alt="">
+  <div class="bub" style="text-align:center">ねえ、もしかして…<div id="aruword" style="font-size:22px;font-weight:800;color:#D9506E;margin-top:6px;line-height:1.5"></div></div>
+  <button class="btn mint" style="font-size:19px;padding:16px" onclick="ansAru('yes')">え、なんで知ってるの！？</button>
+  <div class="ans">
+    <button class="btn" onclick="ansAru('no')">ちがうよ</button>
+    <button class="btn ghost" onclick="ansAru('unk')">わかんない</button>
+  </div>
+</section>
+
 <!-- 当たり -->
 <section class="scr" id="s-hit">
   <img class="chara" src="img/atari.png" alt="">
@@ -174,6 +185,7 @@ textarea,input[type=text]{width:100%;border:2px solid var(--line);border-radius:
     <div class="ok" id="aruok"></div>
   </div>
   <div class="card"><h2>友だちにも試してもらう<span class="pt">友だちが遊ぶと+2点</span></h2><button class="btn mint" onclick="imgShare('hit')">画像でシェア</button><div class="share" id="sharehit"></div><div id="imgbox-hit" style="display:none"><p class="note">画像を長押しして保存してね</p><img id="imgout-hit" style="width:100%;border-radius:12px"></div></div>
+  <div class="card"><h2>よかったら学年を教えて</h2><div class="chips gradeb"><button class="chip" onclick="setGrade(1,this)">1年</button><button class="chip" onclick="setGrade(2,this)">2年</button><button class="chip" onclick="setGrade(3,this)">3年</button></div><div class="note">記録にだけ使います。ほかの人には見えません</div></div>
   <button class="btn ghost" onclick="showRank()">学校パワーランキングを見る</button>
   <button class="btn ghost" onclick="again()">もう一回あそぶ</button>
 </section>
@@ -222,6 +234,7 @@ textarea,input[type=text]{width:100%;border:2px solid var(--line);border-radius:
     <div class="ok" id="aruok2"></div>
   </div>
   <div class="card"><h2>友だちにも試してもらう<span class="pt">友だちが遊ぶと+2点</span></h2><div class="share" id="sharepick"></div></div>
+  <div class="card"><h2>よかったら学年を教えて</h2><div class="chips gradeb"><button class="chip" onclick="setGrade(1,this)">1年</button><button class="chip" onclick="setGrade(2,this)">2年</button><button class="chip" onclick="setGrade(3,this)">3年</button></div><div class="note">記録にだけ使います。ほかの人には見えません</div></div>
   <button class="btn ghost" onclick="showRank()">学校パワーランキングを見る</button>
   <button class="btn ghost" onclick="again()">もう一回あそぶ</button>
 </section>
@@ -313,7 +326,12 @@ function rankTab(t){ RKTAB=t; $('rt-p').className=t==='p'?'on':''; $('rt-a').cla
   box.innerHTML=L.length? L.slice(0,50).map((x,i)=>'<div class="rk'+(x.sid===ms?' me':'')+'"><span class="no">'+(i+1)+'</span><span class="nm">'+esc(D.schools[x.sid].name)+'</span><span class="ps">'+x.pts+'点</span><span class="nn">'+x.n+'人</span></div>').join('') : '<p class="rst">まだのっている学校がありません</p>'; }
 function gatePass(teach){ try{ localStorage.setItem('dokoko-now-gate','1'); }catch(e){} $('missgate').style.display='none'; $('missinner').style.display=''; if(teach) showCands(); }
 (function(){ try{ const u=new URL(location.href), o=u.searchParams.get('o'); if(!o) return; gas('adminOwner',{pass:o,client:clientId()},r=>{ if(r&&r.ok) alert('この端末の記録は数えない設定にしました'); }); u.searchParams.delete('o'); history.replaceState(null,'',u.pathname+u.search); }catch(e){} })();
-function record(sid,win){ inGame=false; try{ localStorage.setItem('dokoko-now-sid',sid); }catch(e){} const s=D.schools[sid]||{}; gas('recordResult',{sid,school:s.name||'',questions:nAsk+2,guesses,win:win?1:0,answers:[firstLog].concat(qlog).join(','),client:clientId(),ref:REF,grad:'現役'}); }
+function entYear(gr){ const d=new Date(), fy=d.getMonth()>=3?d.getFullYear():d.getFullYear()-1; return fy-(gr-1); }
+function nowGrad(){ try{ return '現役'+(localStorage.getItem('dokoko-now-ent')||''); }catch(e){ return '現役'; } }
+function setGrade(gr,btn){ const y=entYear(gr); try{ localStorage.setItem('dokoko-now-ent',String(y)); }catch(e){}
+  btn.parentNode.querySelectorAll('.chip').forEach(b=>b.classList.remove('on')); btn.classList.add('on');
+  gas('setGrade',{sid:aruSid||'',client:clientId(),ent:y}); }
+function record(sid,win){ inGame=false; try{ localStorage.setItem('dokoko-now-sid',sid); }catch(e){} const s=D.schools[sid]||{}; gas('recordResult',{sid,school:s.name||'',questions:nAsk+2,guesses,win:win?1:0,answers:[firstLog].concat(qlog).join(','),client:clientId(),ref:REF,grad:nowGrad()}); }
 
 // ---- 最初の画面 ----
 function chips(el,from,to,cb){ const box=$(el); box.innerHTML=''; for(let v=from;v<=to;v++){ const b=document.createElement('button'); b.className='chip'; b.textContent=v===to?v+'〜':v; b.onclick=()=>{ box.querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); b.classList.add('on'); cb(v); }; box.appendChild(b); } }
@@ -352,7 +370,7 @@ function toNow(t){
 function startQ(){
   if(selY===null||selK===null||selR===null){ $('ferr').textContent='3つとも選んでね'; return; }
   $('ferr').textContent='';
-  g=E.newGame(D); inGame=true; curTop=null; nAsk=0; limit=10; guesses=0; qlog=[];
+  g=E.newGame(D); inGame=true; curTop=null; nAsk=0; aruN=0; aruGap=0; aruAsked={}; limit=10; guesses=0; qlog=[];
   firstLog='YK:'+selY+'-'+selK+',RG:'+selR;
   const YK=window.YK;
   g.post=g.post.map((w,i)=>{ const c=D.candidates[i]; if(c.decade!==NOWDEC) return 0; const yk=YK[c.sid]; if(!yk) return w*1e-6;
@@ -366,9 +384,26 @@ function startQ(){
   g.n=10; g._nqN=-1;  // 地名の質問も早めに出せるように（試算で10問めの正解率 約54%）
   nextQ();
 }
+let aruN=0, aruGap=0, aruAsked={}, aruCur=null;
+const ARU_TH=0.7, ARU_MAX=2;
+function aruPick(){ const t=E.top(D,g); if(!t||!t.sid) return null; const w=words(t.sid).find(x=>!aruAsked[t.sid+'|'+x]); return w?{sid:t.sid,word:w,prob:t.prob||0}:null; }
+function showAru(a){ aruCur=a; aruAsked[a.sid+'|'+a.word]=1; aruN++; aruGap=0;
+  $('aruword').textContent='「'+a.word+'」？'; show('s-aru'); }
+function ansAru(a){ const c=aruCur; if(!c) return nextQ(); qlog.push('AR:'+a);
+  if(a!=='unk'){ const hit=a==='yes'; g.post=g.post.map((w,i)=>w*(D.candidates[i].sid===c.sid ? (hit?.85:.15) : (hit?.12:.88)));
+    const t=g.post.reduce((x,y)=>x+y,0)||1; g.post=g.post.map(w=>w/t); }
+  aruCur=null; if(c.last) return doGuess(); nextQ(); }
 function nextQ(){
-  if(nAsk+2>=limit){ return doGuess(); }
+  const last = nAsk+2>=limit;
+  if(aruN<ARU_MAX && (aruN===0 || aruGap>=1)){
+    const a=aruPick();
+    if(a && (a.prob>=ARU_TH || (last && aruN===0))){ a.last=last; return showAru(a); }
+  }
+  if(last){ return doGuess(); }
   qi=E.nextQuestion(D,g);
+  for(let k=0;k<30&&qi!==null&&qi!==undefined;k++){   // 答えがほぼ決まっている質問（例：岐阜市にある→東海三県）は出さない
+    const q=D.questions[qi]; let py=0; g.post.forEach((w,i)=>{ if(w) py+=w*q.p[i]; });
+    if(py<0.95 && py>0.05) break; g.asked.push(qi); qi=E.nextQuestion(D,g); }
   if(qi===null||qi===undefined){ return doGuess(); }
   const q=D.questions[qi];
   $('qtext').textContent=(window.QNOW&&window.QNOW[q.id])||toNow(q.text);
@@ -381,7 +416,7 @@ function nextQ(){
   $('qsay').textContent=st[1]; $('qmood').textContent='';
   show('s-q');
 }
-function ans(a){ const q=D.questions[qi]; qlog.push(q.id+':'+a); E.answer(D,g,qi,a); nAsk++; nextQ(); }
+function ans(a){ const q=D.questions[qi]; qlog.push(q.id+':'+a); E.answer(D,g,qi,a); nAsk++; aruGap++; nextQ(); }
 function doGuess(){ curTop=E.top(D,g); guesses++; const s=D.schools[curTop.sid]; $('gname').textContent=s.name; $('gsub').textContent=RG[regOf(curTop.sid)][0]+'の学校'; show('s-guess'); }
 function words(sid){ return (D.words[sid]||[]).map(w=>w.replace(/^\*/,'')).filter(Boolean).slice(0,8); }
 function fillAru(el,box,sid){ const ws=words(sid); $(box).innerHTML=ws.map(w=>'<span>'+esc(w)+'</span>').join(''); $(el).style.display=ws.length?'':'none'; }
@@ -421,7 +456,7 @@ function picked(sid){ aruSid=sid; record(sid,false); $('thx').textContent='「'+
   shareBox('sharepick','AIに通ってる高校を当ててもらうゲームやってみた　あなたは当てられる？','share-pick.'+scode(sid)); loadStatus('thxrst'); show('s-thanks'); }
 function postAru(k){ const sfx=k===2?'2':''; const t=$('aruin'+sfx).value.trim();
   if(!t){ $('aruerr'+sfx).textContent='あるあるを書いてね'; return; } $('aruerr'+sfx).textContent='';
-  const s=D.schools[aruSid]||{}; gas('postAruaru',{sid:aruSid,school:s.name||'',text:t,grad:'現役',client:clientId()});
+  const s=D.schools[aruSid]||{}; gas('postAruaru',{sid:aruSid,school:s.name||'',text:t,grad:nowGrad(),client:clientId()});
   $('aruok'+sfx).textContent='ありがとう！AIがたしかめてから追加するね'; $('aruin'+sfx).value=''; }
 // ---- シェア画像（どこ高と同じく画像つきでシェア。当たりは学校名を出さない） ----
 const IMGC={}; function loadImg(src){ return IMGC[src]||(IMGC[src]=new Promise(r=>{ const im=new Image(); im.onload=()=>r(im); im.onerror=()=>r(null); im.src=src; })); }
