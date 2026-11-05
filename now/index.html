@@ -309,6 +309,7 @@ function rankTab(t){ RKTAB=t; $('rt-p').className=t==='p'?'on':''; $('rt-a').cla
   $('rt-p').textContent=mp?mp:'自分の県';
   box.innerHTML=L.length? L.slice(0,50).map((x,i)=>'<div class="rk'+(x.sid===ms?' me':'')+'"><span class="no">'+(i+1)+'</span><span class="nm">'+esc(D.schools[x.sid].name)+'</span><span class="ps">'+x.pts+'点</span><span class="nn">'+x.n+'人</span></div>').join('') : '<p class="rst">まだのっている学校がありません</p>'; }
 function gatePass(teach){ try{ localStorage.setItem('dokoko-now-gate','1'); }catch(e){} $('missgate').style.display='none'; $('missinner').style.display=''; if(teach) showCands(); }
+(function(){ try{ const u=new URL(location.href), o=u.searchParams.get('o'); if(!o) return; gas('adminOwner',{pass:o,client:clientId()},r=>{ if(r&&r.ok) alert('この端末の記録は数えない設定にしました'); }); u.searchParams.delete('o'); history.replaceState(null,'',u.pathname+u.search); }catch(e){} })();
 function record(sid,win){ inGame=false; try{ localStorage.setItem('dokoko-now-sid',sid); }catch(e){} const s=D.schools[sid]||{}; gas('recordResult',{sid,school:s.name||'',questions:nAsk+2,guesses,win:win?1:0,answers:[firstLog].concat(qlog).join(','),client:clientId(),ref:REF,grad:'現役'}); }
 
 // ---- 最初の画面 ----
