@@ -263,7 +263,7 @@ const INAPP=(()=>{ const ua=navigator.userAgent||''; if(/musical_ly|TikTok|Byted
 const REF=(()=>{ const tag=INAPP?' @'+INAPP:''; try{ const q=new URLSearchParams(location.search).get('ref'); let r=(q!==null)?q:(document.referrer||''); if(!r) return 'now:(なし)'+tag; try{ r=new URL(r).hostname||r; }catch(e){} if(r===location.hostname) return 'now:(なし)'+tag; return 'now:'+String(r).slice(0,44)+tag; }catch(e){ return 'now:'+tag.trim(); } })();
 let inGame=false;
 function quitSend(reason){ if(!inGame) return; inGame=false; let top=''; try{ top=curTop?curTop.sid:E.top(D,g).sid; }catch(e){}
-  gas('recordQuit',{reason,ref:'now:'+REF,n:nAsk+2,guesses,top,answers:[firstLog].concat(qlog).join(','),client:clientId()}); }
+  gas('recordQuit',{reason,ref:REF,n:nAsk+2,guesses,top,answers:[firstLog].concat(qlog).join(','),client:clientId()}); }
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden') quitSend('とちゅうで画面をとじた'); });
 function record(sid,win){ inGame=false; const s=D.schools[sid]||{}; gas('recordResult',{sid,school:s.name||'',questions:nAsk+2,guesses,win:win?1:0,answers:[firstLog].concat(qlog).join(','),client:clientId(),ref:REF,grad:'現役'}); }
 
