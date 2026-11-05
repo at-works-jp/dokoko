@@ -201,6 +201,7 @@ textarea,input[type=text]{width:100%;border:2px solid var(--line);border-radius:
 <script src="engine.js"></script>
 <script src="yk.js"></script>
 <script src="jp.js"></script>
+<script src="qtext.js"></script>
 <script>
 const D = window.GAME_DATA, E = window.Engine;
 if (D.z) {
@@ -293,7 +294,7 @@ function startQ(){
     L *= (regOf(c.sid)===selR) ? 1 : 0.002;                       // 地方
     return w*L; });
   const t=g.post.reduce((a,b)=>a+b,0)||1; g.post=g.post.map(w=>w/t);
-  D.questions.forEach((q,i)=>{ if(/^E\d/.test(q.id)||q.id==='M7'||NOQ.test(q.text)) g.asked.push(i); });
+  D.questions.forEach((q,i)=>{ const t=(window.QNOW||{})[q.id]; if(t===null||t===undefined||/^E\d/.test(q.id)||q.id==='M7') g.asked.push(i); });  // 書きなおし表にない・除外した質問は聞かない
   g.n=10; g._nqN=-1;  // 地名の質問も早めに出せるように（試算で10問めの正解率 約54%）
   nextQ();
 }
@@ -302,7 +303,7 @@ function nextQ(){
   qi=E.nextQuestion(D,g);
   if(qi===null||qi===undefined){ return doGuess(); }
   const q=D.questions[qi];
-  $('qtext').textContent=toNow(q.text);
+  $('qtext').textContent=(window.QNOW&&window.QNOW[q.id])||toNow(q.text);
   $('qnum').textContent='質問 '+(nAsk+3)+' / '+limit;
   $('qbar').style.width=((nAsk+2)/limit*100)+'%';
   const p=E.top(D,g).prob||0;
