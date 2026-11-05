@@ -21,10 +21,13 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"M PLUS Rounded 
 .chara.sm{width:110px;height:110px}
 .bub{position:relative;background:var(--card);border:2px solid var(--line);border-radius:18px;padding:12px 14px;margin:6px 0 12px;line-height:1.7;font-size:15px}
 .bub:before{content:"";position:absolute;top:-10px;left:50%;margin-left:-9px;border:9px solid transparent;border-top:0;border-bottom-color:var(--line)}
-.bub.plea{background:#FFF0F3;border:3px solid var(--pinkD);font-size:17px;font-weight:800;line-height:1.75;padding:14px 16px;box-shadow:0 4px 0 #F3C2CD}
-.bub.plea:before{top:-12px;margin-left:-11px;border-width:11px;border-top:0;border-bottom-color:var(--pinkD)}
+.bub.plea{background:#fff;border:2px solid var(--line);text-align:center;font-size:15px;font-weight:700;line-height:1.7;padding:14px 14px 12px;box-shadow:none}
+.bub.plea:before{top:-11px;margin-left:-10px;border-width:10px;border-top:0;border-bottom-color:var(--line)}
 .bub.plea em{font-style:normal;color:#D9506E}
-.bub.plea .beg{display:block;text-align:center;font-size:26px;color:#D9506E;margin-top:6px;animation:beg 1.6s ease-in-out infinite}
+.bub.plea .sub{display:block;color:var(--soft);font-weight:500}
+.bub.plea .big{display:block;font-size:44px;line-height:1.15;color:#D9506E;font-weight:800;letter-spacing:.02em}.bub.plea .big small{font-size:22px}
+.bub.plea p{margin:8px 0 0}
+.bub.plea .beg{display:block;text-align:center;font-size:24px;color:#D9506E;margin-top:6px;animation:beg 1.6s ease-in-out infinite}
 @keyframes beg{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 #cy .chip{flex:1 0 calc(20% - 6px)}
 h1{font-weight:800;font-size:26px;text-align:center;margin:8px 0 2px;letter-spacing:.02em}
@@ -96,7 +99,7 @@ textarea,input[type=text]{width:100%;border:2px solid var(--line);border-radius:
 <!-- 最初の2つ -->
 <section class="scr" id="s-first">
   <img class="chara sm" src="img/please.png" alt="">
-  <div class="bub plea">待って、高校って全国に<br><em>5,400校</em>もあるんだけど…<br>正直、ここから当てるのは<em>ムリ。</em><br><em>ほんとにムリ。</em><br>でも10問で当てたい。<br>どうしても当てたい。<br>だから最初に、この2つだけ教えて…<span class="beg">たのむ…！</span></div>
+  <div class="bub plea"><span class="sub">待って、高校って全国に</span><span class="big">5,400<small>校</small></span><span class="sub">もあるんだけど…</span><p>正直、ここから当てるのは<em>ムリ。</em><br><em>ほんとにムリ。</em></p><p>でも10問で当てたい。<br>どうしても当てたい。</p><p class="sub" style="display:block">だから最初に、この2つだけ教えて…</p><span class="beg">おねがいします…！</span></div>
 
   <div class="card">
     <h2>① 学校名は何文字？</h2>
