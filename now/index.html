@@ -46,6 +46,14 @@ h1 small{display:block;font-size:14px;color:var(--pinkD);letter-spacing:.2em}
 .prog{height:10px;background:#F1E7D8;border-radius:99px;overflow:hidden;margin:6px 0 4px}
 .prog i{display:block;height:100%;background:var(--mint);border-radius:99px;transition:width .3s}
 .qtext{font-size:19px;font-weight:800;line-height:1.6;text-align:center;margin:6px 0 14px;min-height:3.2em}
+.qrow{display:flex;align-items:center;gap:6px;margin:10px 0 14px}
+.qc{width:104px;height:104px;object-fit:contain;flex:0 0 104px}
+.qc.pop{animation:boing .45s ease}
+@keyframes boing{0%{transform:scale(1)}30%{transform:scale(1.18) rotate(-6deg)}60%{transform:scale(.94) rotate(3deg)}100%{transform:scale(1)}}
+.qbub{position:relative;flex:1;background:#fff;border:2px solid var(--line);border-radius:18px;padding:10px 12px}
+.qbub:before{content:"";position:absolute;left:-11px;top:50%;margin-top:-9px;border:9px solid transparent;border-left:0;border-right-color:var(--line)}
+.qsay{font-size:12.5px;color:var(--pinkD);font-weight:800;min-height:1.2em}
+.qbub .qtext{font-size:17px;text-align:left;margin:2px 0 0;min-height:0}
 .ans{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ans .btn{margin:0}
 .guess{font-size:26px;font-weight:800;text-align:center;margin:4px 0}
 .aru{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
@@ -109,8 +117,10 @@ textarea,input[type=text]{width:100%;border:2px solid var(--line);border-radius:
 <section class="scr" id="s-q">
   <div class="qhead"><span id="qnum">質問 3 / 10</span><span id="qmood"></span></div>
   <div class="prog"><i id="qbar"></i></div>
-  <img class="chara" id="qchara" src="img/think.png" alt="">
-  <div class="qtext" id="qtext"></div>
+  <div class="qrow">
+    <img class="qc" id="qchara" src="img/think.png" alt="">
+    <div class="qbub"><div class="qsay" id="qsay"></div><div class="qtext" id="qtext"></div></div>
+  </div>
   <div class="ans">
     <button class="btn mint" onclick="ans('yes')">はい</button>
     <button class="btn" onclick="ans('no')">いいえ</button>
@@ -146,7 +156,7 @@ textarea,input[type=text]{width:100%;border:2px solid var(--line);border-radius:
     <button class="btn mint" onclick="postAru()">送る</button>
     <div class="ok" id="aruok"></div>
   </div>
-  <div class="card"><h2>友だちにも試してもらう</h2><div class="share" id="sharehit"></div></div>
+  <div class="card"><h2>友だちにも試してもらう</h2><button class="btn mint" onclick="imgShare('hit')">画像でシェア</button><div class="share" id="sharehit"></div><div id="imgbox-hit" style="display:none"><p class="note">画像を長押しして保存してね</p><img id="imgout-hit" style="width:100%;border-radius:12px"></div></div>
   <button class="btn ghost" onclick="again()">もう一回あそぶ</button>
 </section>
 
@@ -155,7 +165,7 @@ textarea,input[type=text]{width:100%;border:2px solid var(--line);border-radius:
   <img class="chara" src="img/hazure.png" alt="">
   <div class="bub" id="missmsg"></div>
   <div class="card" id="missaru"><h2 id="missaruh"></h2><div class="aru" id="missaruw"></div></div>
-  <div class="card"><h2>まちがわれたことをシェア</h2><div class="share" id="sharemiss"></div></div>
+  <div class="card"><h2>まちがわれたことをシェア</h2><button class="btn mint" onclick="imgShare('miss')">画像でシェア</button><div class="share" id="sharemiss"></div><div id="imgbox-miss" style="display:none"><p class="note">画像を長押しして保存してね</p><img id="imgout-miss" style="width:100%;border-radius:12px"></div></div>
   <button class="btn mint" onclick="contQ()">まだ質問を続ける</button>
   <button class="btn ghost" onclick="showCands()">候補から選ぶ</button>
 </section>
@@ -307,8 +317,10 @@ function nextQ(){
   $('qnum').textContent='質問 '+(nAsk+3)+' / '+limit;
   $('qbar').style.width=((nAsk+2)/limit*100)+'%';
   const p=E.top(D,g).prob||0;
-  $('qchara').src= p>.5 ? 'img/jishin.png' : (nAsk%2 ? 'img/think.png' : 'img/normal.png');
-  $('qmood').textContent= p>.5 ? 'わかってきた…！' : (p>.2 ? 'しぼれてきた' : 'うーん…');
+  const st= p>.6 ? ['jishin','わかってきた…！あと少し！'] : p>.3 ? ['bikkuri','おっ、しぼれてきた！'] : p>.1 ? ['think','うーん…考え中…'] : ['muri','ぜんぜんわからない…ムリかも…'];
+  const im=$('qchara'), src='img/'+st[0]+'.png';
+  if(!im.src.endsWith(src)){ im.src=src; im.classList.remove('pop'); void im.offsetWidth; im.classList.add('pop'); }
+  $('qsay').textContent=st[1]; $('qmood').textContent='';
   show('s-q');
 }
 function ans(a){ const q=D.questions[qi]; qlog.push(q.id+':'+a); E.answer(D,g,qi,a); nAsk++; nextQ(); }
@@ -349,6 +361,32 @@ function postAru(k){ const sfx=k===2?'2':''; const t=$('aruin'+sfx).value.trim()
   if(!t){ $('aruerr'+sfx).textContent='あるあるを書いてね'; return; } $('aruerr'+sfx).textContent='';
   const s=D.schools[aruSid]||{}; gas('postAruaru',{sid:aruSid,school:s.name||'',text:t,grad:'現役',client:clientId()});
   $('aruok'+sfx).textContent='ありがとう！AIがたしかめてから追加するね'; $('aruin'+sfx).value=''; }
+// ---- シェア画像（どこ高と同じく画像つきでシェア。当たりは学校名を出さない） ----
+const IMGC={}; function loadImg(src){ return IMGC[src]||(IMGC[src]=new Promise(r=>{ const im=new Image(); im.onload=()=>r(im); im.onerror=()=>r(null); im.src=src; })); }
+async function makeImg(kind){
+  const W=1200,H=630,c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d');
+  const F='"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif';
+  x.fillStyle='#FFF8EE'; x.fillRect(0,0,W,H);
+  x.fillStyle='#FFE9EF'; x.beginPath(); x.arc(300,330,250,0,7); x.fill();
+  const im=await loadImg(kind==='hit'?'img/atari.png':'img/hazure.png'); if(im) x.drawImage(im,90,120,420,420);
+  x.textAlign='center'; const cx=850;
+  x.fillStyle='#F08AA0'; x.font='800 34px '+F; x.fillText('どこ高？ 現役生版',cx,110);
+  x.fillStyle='#5A4A3A';
+  if(kind==='hit'){ x.font='800 64px '+F; x.fillText('AIに通ってる高校を',cx,250); x.fillText('当てられた…！',cx,330);
+    x.fillStyle='#6FAE66'; x.font='800 46px '+F; x.fillText((nAsk+2)+'問でバレた',cx,420); }
+  else { const nm=D.schools[curTop.sid].name; x.font='800 44px '+F; x.fillText('AIに',cx,215);
+    let fs=72; x.font='800 '+fs+'px '+F; while(x.measureText('「'+nm+'」').width>620&&fs>36){ fs-=4; x.font='800 '+fs+'px '+F; }
+    x.fillStyle='#E0607E'; x.fillText('「'+nm+'」',cx,310); x.fillStyle='#5A4A3A'; x.font='800 44px '+F; x.fillText('の生徒っぽいって言われた笑',cx,390); }
+  x.fillStyle='#8C7B6B'; x.font='600 28px '+F; x.fillText(kind==='hit'?'#どこ高　あなたの高校は当てられる？':'#どこ高　あなたは何高っぽい？',cx,545);
+  return c;
+}
+async function imgShare(kind){
+  const c=await makeImg(kind);
+  const tx=(kind==='hit'?'AIに通ってる高校を当てられた…！あなたも当てられる？':'AIに「'+D.schools[curTop.sid].name+'の生徒っぽい」って言われた笑 あなたは何高っぽい？')+'\n#どこ高 #高校あるある\n'+URL0+'?ref=share-img';
+  try{ const blob=await new Promise(r=>c.toBlob(r,'image/png')); const file=new File([blob],'dokoko-now.png',{type:'image/png'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],text:tx}); return; } }catch(e){ if(e&&e.name==='AbortError') return; }
+  $('imgout-'+kind).src=c.toDataURL('image/png'); $('imgbox-'+kind).style.display=''; try{ await navigator.clipboard.writeText(tx); }catch(e){}
+}
 function again(){ show('s-start'); }
 </script>
 </body>
