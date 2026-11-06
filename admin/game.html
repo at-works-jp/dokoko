@@ -174,6 +174,25 @@ function render(){
   h+=hbars('どこから来て遊んだか',[...cnt(R.filter(o=>o.ref),o=>o.ref).entries()].sort((a,b)=>b[1]-a[1]).slice(0,15),{note:'11/4の昼から記録しています'});
   h+=hbars('途中でやめた人の来た元',[...cnt(Q.filter(o=>o.ref),o=>o.ref).entries()].sort((a,b)=>b[1]-a[1]).slice(0,15),{b:1});
   h+='</div>';
+  // 11 明細（高校名つき・運営だけ）
+  const verOf=ref=>{ ref=String(ref||''); return ref.indexOf('now:A|')===0?'全世代（高校生）':ref.indexOf('now:')===0?'現役生版':ref.indexOf('all:')===0?'全世代（卒業生）':'母校版'; };
+  const refOf=ref=>String(ref||'').replace(/^now:(A\|)?|^all:/,'')||'(なし)';
+  const snm=sid=>(G.schools[sid]||{}).name||sid||'';
+  const tm=t=>String(t).replace('T',' ').slice(5,16);
+  const byNew=(a,b)=>String(b.t).localeCompare(String(a.t));
+  const DN=window.DETAIL_N||100;
+  h+='<h3>11. 明細（高校名つき・外に出さない）</h3>';
+  const RR=R.slice().sort(byNew);
+  h+=table('遊ばれた記録（新しい順・'+Math.min(DN,RR.length)+'/'+RR.length+'件）',['日時','版','来た元','高校','結果','質問数','端末','卒業年・学年'],
+    RR.slice(0,DN).map(o=>[tm(o.t),verOf(o.ref),refOf(o.ref),snm(o.sid),o.win?(o.gs===1?'1回目で当たり':o.gs+'回目で当たり'):'外れ→教えてくれた',o.q,String(o.c).slice(0,4),o.grad||'']),
+    '高校は、当たったときはその学校、外れたときは遊んだ人が教えてくれた学校です');
+  const QQ=Q.slice().sort(byNew);
+  h+=table('途中でやめた記録（新しい順・'+Math.min(DN,QQ.length)+'/'+QQ.length+'件）',['日時','版','来た元','理由','質問数','予想回数','端末'],
+    QQ.slice(0,DN).map(o=>[tm(o.t),verOf(o.ref),refOf(o.ref),o.why,o.q,o.gs,String(o.c).slice(0,4)]));
+  const PP=P.slice().sort(byNew);
+  h+=table('あるある投稿（新しい順・'+Math.min(DN,PP.length)+'/'+PP.length+'件）',['日時','版','高校','あるある','卒業年・学年','端末'],
+    PP.slice(0,DN).map(o=>[tm(o.t),String(o.grad||'').indexOf('現役')===0?'現役生':'卒業生',snm(o.sid),o.text,o.grad||'',String(o.c).slice(0,4)]));
+  if(Math.max(RR.length,QQ.length,PP.length)>DN) h+='<button style="margin:8px 0" onclick="window.DETAIL_N=(window.DETAIL_N||100)+100;render()">もっと見る（+100件）</button>';
   $('out').innerHTML=h;
 }
 </script>
