@@ -134,6 +134,7 @@
       <button class="big" id="startBtn">当てられるか試す</button>
       <button class="ghost" id="rankBtn">ランキング</button>
     </div>
+    <p class="note" style="text-align:center;margin-top:2px">遊ぶと1点・友だちが遊ぶと2点・あるあるで3点<br>母校を応援しよう</p>
     <p class="note" id="privNote">答えはこの端末の中だけで計算し、どこにも送りません。</p>
     <p class="note" style="text-align:center;margin-top:14px;opacity:.7">© A&amp;T Works</p>
   </section>
@@ -162,7 +163,8 @@
     <div class="btns" id="rankTabs"></div>
     <table class="rank hidden" id="hardRank"></table>
     <h2 id="powTitle">母校パワーランキング（準備中）</h2>
-    <p class="small" id="powNote">遊んだ回数 × 早く当てられた度。みんなで遊ぶほど、早く当てられるほど母校が上がる！（準備中）</p>
+    <p class="small" id="powNote">2人以上が遊んだ学校がのります</p>
+    <div class="post" style="margin:6px 0;font-size:14px;line-height:1.9"><b>母校パワーのため方</b><br>・最後まで遊ぶと 1点<br>・シェアして友だちが遊ぶと 1人につき2点<br>・母校のあるあるを書くと 3点</div>
     <div id="myRank" class="post" style="display:none;cursor:pointer;margin:6px 0"></div>
     <input id="rankSearch" placeholder="学校名でさがす（例：岐阜北）" style="width:100%;padding:10px;font-size:16px;border:1px solid var(--line);border-radius:10px;background:#fff;margin:4px 0 6px;box-sizing:border-box">
     <div id="rankBox" style="position:relative;max-height:42vh;overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fff;padding:0 8px">
@@ -696,7 +698,7 @@ function end(win,t){
   const pts = win ? Math.max(0,30-g.n) * (guesses>1?0.5:1) : 0;
   $('endSub').textContent = win ? `${g.n}問で当てられました` : '当てられませんでした';
   $('endName').textContent = t.school;
-  $('endPts').textContent = win ? '' : 'AIに当てられなかった！';
+  $('endPts').textContent = win ? '' : 'AIに当てられなかった！';  // 点の表示は report() で出す
   report(t.sid, t.school, g.n, guesses, win);
   // 本当の学校がわかったので、その学校について聞いた「ピンとくる？」だけを票として送る
   try{ pinto.filter(p=>p.sid===t.sid && p.ans && p.ans!=='unk').forEach(p=>{ if(GAS) GAS.withFailureHandler(()=>{}).voteAruaru({sid:p.sid,school:((D.schools[p.sid]||{}).name||''),text:p.word,ans:p.ans,client:clientId()}); }); }catch(e){}
@@ -901,9 +903,16 @@ function clientId(){ try{ let c=localStorage.getItem('koukou-client'); if(!c){ c
 (function(){ try{ const o=new URLSearchParams(location.search).get('o'); if(o && GAS) GAS.withFailureHandler(()=>{}).adminOwner({pass:o,client:clientId()}); }catch(e){} })();
 try{ if(GAS) GAS.withSuccessHandler(m=>{ if(m) ARU_TOP=m; }).withFailureHandler(()=>{}).getAruTop(); }catch(e){}
 try{ if(GAS) GAS.withSuccessHandler(m=>{ if(m) ARU_ALL=m; }).withFailureHandler(()=>{}).getAruAll(); }catch(e){}
+const escG=x=>String(x).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 function report(sid,school,questions,guesses,win){
   if(!GAS) return;
-  GAS.withSuccessHandler(r=>{ if(r&&r.ok&&win){ $('endPts').textContent = r.capped ? '今日の加点上限に達しました（遊ぶのは何回でもOK）' : `${school.replace(/（.*/,'')}に ${r.points} ポイント！`; } })
+  if(!sid){ GAS.withFailureHandler(()=>{}).recordResult({sid,school,questions,guesses,win,answers:qlog.join(','),client:clientId(),ref:REF}); return; }
+  const nm=school.replace(/（.*/,''), today=new Date().toLocaleDateString('ja-JP');
+  let first=true; try{ first=localStorage.getItem('koukou-ptday')!==today; localStorage.setItem('koukou-ptday',today); }catch(e){}
+  $('endPts').innerHTML=(win?'':'AIに当てられなかった！<br>')+(first?`${escG(nm)}に +1点！`:'今日の1点は入っています')+'<div class="small" style="font-weight:500">あるあるを書くと+3点・友だちが遊ぶと+2点</div><div class="small" id="endRank" style="font-weight:500"></div>';
+  setTimeout(()=>{ try{ GAS.withSuccessHandler(rows=>{ const L=(rows||[]).filter(x=>x&&x.u>=2).sort((a,b)=>b.pts-a.pts||b.u-a.u), i=L.findIndex(x=>x.sid===sid), el=document.getElementById('endRank'); if(!el) return;
+    el.innerHTML = i>=0 ? `${escG(nm)}はいま<b>${i+1}位</b>` : `${escG(nm)}はまだランキングにのっていません　あと1人参戦でのります`; }).withFailureHandler(()=>{}).getRanking(); }catch(e){} },2500);
+  GAS.withSuccessHandler(()=>{})
      .withFailureHandler(()=>{}).recordResult({sid,school,questions,guesses,win,answers:qlog.join(','),client:clientId(),ref:REF,grad:(()=>{try{return localStorage.getItem('koukou-grad')||''}catch(e){return ''}})()});
 }
 let rankPref=null;
@@ -920,25 +929,26 @@ function showRank(){
     $('hardRank').innerHTML=hard.map(([sid,s,h,real],i)=>`<tr><td class="n">${i+1}</td><td>${shortName(sid)}${s.gone?'<span class="small">（今は無い）</span>':''}</td><td class="v">的中率 ${Math.round(h*100)}%${real?'':'<span class="small">（試算）</span>'}</td></tr>`).join('');
     if(GAS){
       $('powTitle').textContent='母校パワーランキング';
-      const pw=Object.entries(live).filter(x=>x[1].n>0 && inPref(x[0])).sort((a,b)=>b[1].pts-a[1].pts);
-      const total=pw.reduce((s,x)=>s+x[1].n,0);
-      $('powNote').textContent=`${rankPref||'全国'}の母校ランキング。遊んだ回数 × 早く当てられた度で上がる！（これまで${total}回）`;
+      const pw=Object.entries(live).filter(x=>x[1].u>=2 && inPref(x[0])).sort((a,b)=>b[1].pts-a[1].pts||b[1].u-a[1].u);
+      const total=Object.values(live).reduce((s,x)=>s+x.n,0);
+      $('powNote').textContent=`${rankPref||'全国'}の母校ランキング。2人以上が遊んだ学校がのります（これまで${total}回）`;
       // 枠の中でスクロール。自分の母校（最後に遊んだ学校）の順位を上に出す。学校名でしぼれる
       let me=''; try{ me=localStorage.getItem('koukou-last-sid')||''; }catch(e){}
       const qq=($('rankSearch').value||'').trim();
       const rows=pw.map(([sid,r],i)=>[sid,r,i+1]).filter(([sid])=>!qq || shortName(sid).includes(qq) || ((D.schools[sid]||{}).old||[]).some(x=>x.includes(qq)));
-      $('powRank').innerHTML = rows.length ? rows.map(([sid,r,k])=>`<tr id="rk_${sid}"${sid===me?' style="background:#f6e7a8"':''}><td class="n">${k}</td><td>${shortName(sid)}<div class="small">当たり${r.hit}回・AIの負け${r.miss}回</div></td><td class="v">${r.pts} pt</td></tr>`).join('')
+      $('powRank').innerHTML = rows.length ? rows.map(([sid,r,k])=>`<tr id="rk_${sid}"${sid===me?' style="background:#f6e7a8"':''}><td class="n">${k}</td><td>${shortName(sid)}<div class="small">${r.u}人が遊んだ</div></td><td class="v">${r.pts}点</td></tr>`).join('')
         : (qq ? '<tr><td class="small">見つかりません（まだ点がない学校かもしれません）</td></tr>' : '<tr><td class="small">まだ記録がありません。最初の1点を母校に入れよう。</td></tr>');
       const mi=pw.findIndex(([sid])=>sid===me);
-      if(mi>=0){ $('myRank').style.display=''; $('myRank').innerHTML=`<b>あなたの母校</b>　${shortName(me)}：<b>${mi+1}位</b>（${pw[mi][1].pts} pt）<span class="small">　タップで表の中へ</span>`;
+      if(mi>=0){ $('myRank').style.display=''; $('myRank').innerHTML=`<b>あなたの母校</b>　${shortName(me)}：<b>${mi+1}位</b>（${pw[mi][1].pts}点）<span class="small">　タップで表の中へ</span>`;
         $('myRank').onclick=()=>{ $('rankSearch').value=''; draw(); const tr=document.getElementById('rk_'+me); if(tr){ $('rankBox').scrollTop=tr.offsetTop-$('rankBox').clientHeight/2; } }; }
+      else if(me && D.schools[me] && inPref(me) && Object.keys(live).length){ $('myRank').style.display=''; $('myRank').onclick=null; $('myRank').innerHTML=`<b>あなたの母校</b>　${shortName(me)}：まだのっていません<span class="small">　あと1人参戦でのります</span>`; }
       else $('myRank').style.display='none';
     }
   };
   $('rankSearch').value=''; $('rankSearch').oninput=()=>draw(); $('rankBox').scrollTop=0;
-  tabs(); draw(); $('counter').textContent='ランキング'; show('s-rank');
+  tabs(); draw(); $('counter').textContent='ランキング'; show('s-rank'); try{ if(GAS) GAS.withFailureHandler(()=>{}).logShare({kind:'rank-open',client:clientId()}); }catch(e){}
   if(GAS){ $('powRank').innerHTML='<tr><td class="small">読み込み中…</td></tr>';
-    GAS.withSuccessHandler(rows=>{ (rows||[]).forEach(r=>{ if(r && typeof r.sid==='string' && D.schools[r.sid]) live[r.sid]={sid:r.sid,n:+r.n||0,hit:+r.hit||0,miss:+r.miss||0,pts:+r.pts||0}; }); draw(); }).withFailureHandler(()=>{ $('powRank').innerHTML='<tr><td class="small">読み込めませんでした</td></tr>'; }).getRanking(); }
+    GAS.withSuccessHandler(rows=>{ (rows||[]).forEach(r=>{ if(r && typeof r.sid==='string' && D.schools[r.sid]) live[r.sid]={sid:r.sid,n:+r.n||0,u:+r.u||0,hit:+r.hit||0,miss:+r.miss||0,pts:+r.pts||0}; }); draw(); }).withFailureHandler(()=>{ $('powRank').innerHTML='<tr><td class="small">読み込めませんでした</td></tr>'; }).getRanking(); }
 }
 
 // ---- 逆モード ----

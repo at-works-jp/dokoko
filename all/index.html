@@ -337,17 +337,17 @@ function rankMsg(R){ if(!R) return ''; if(!R.open) return 'ランキングは'+R
   if(!R.mine) return ''; return R.mine.listed ? 'あなたの学校はいま<b>'+R.mine.rank+'位</b>' : 'あなたの学校はまだランキングにのっていません<br>あと1人参戦でのります'; }
 function loadStatus(el){ $(el).innerHTML=''; setTimeout(()=>gas('getNowRanking',{sid:mySid()},R=>{ $(el).innerHTML=rankMsg(R); }),2500); }
 let RK=null, RKTAB='p', RKM='now', RKO=null;
-function showRank(){ RKM=MODE; return rankMode(RKM); }
+function showRank(){ try{ lsh('rank-open'); }catch(e){} RKM=MODE; return rankMode(RKM); }
 function showRankNow(){ show('s-rank'); $('rtotal').textContent='読みこみ中…'; $('rmine').innerHTML=''; $('rlist2').innerHTML='';
   gas('getNowRanking',{sid:mySid()},R=>{ RK=R; $('rtotal').textContent='いま'+R.total+'人が参戦中'; $('rmine').innerHTML=rankMsg(R);
     const ms=mySid(); RKTAB=ms&&D.schools[ms]?'p':'a'; rankTab(RKTAB); }); }
 function rankMode(m){ RKM=m; $('rm-now').className=m==='now'?'on':''; $('rm-old').className=m==='old'?'on':''; $('rrule').style.display=m==='now'?'':'none';
   if(m==='now') return showRankNow();
   show('s-rank'); $('rtotal').textContent='読みこみ中…'; $('rmine').innerHTML=''; $('rlist2').innerHTML='';
-  gas('getRanking',{},R=>{ RKO=(R||[]).filter(x=>x&&x.pts>0).sort((a,b)=>b.pts-a.pts); $('rtotal').textContent='卒業生の母校パワーランキング'; $('rmine').innerHTML='<span style="font-size:12px;color:var(--soft)">早く当てられるほど高い点（30−質問数）</span>'; rankTab(mySid()&&D.schools[mySid()]?'p':'a'); }); }
+  gas('getRanking',{},R=>{ RKO=(R||[]).filter(x=>x&&x.u>=2).sort((a,b)=>b.pts-a.pts||b.u-a.u); $('rtotal').textContent='卒業生の母校パワーランキング'; $('rmine').innerHTML='<span style="font-size:12px;color:var(--soft)">遊ぶと1点・友だちが遊ぶと2点・あるあるで3点（2人以上が遊んだ学校がのります）</span>'; rankTab(mySid()&&D.schools[mySid()]?'p':'a'); }); }
 function rankTab(t){ if(RKM==='old'){ RKTAB=t; $('rt-p').className=t==='p'?'on':''; $('rt-a').className=t==='a'?'on':''; const ms=mySid(), mp=ms&&D.schools[ms]?prefLabel(D.schools[ms].region):'';
     let L=(RKO||[]).filter(x=>D.schools[x.sid]); if(t==='p'&&mp) L=L.filter(x=>prefLabel(D.schools[x.sid].region)===mp); $('rt-p').textContent=mp?mp:'自分の県';
-    $('rlist2').innerHTML=L.length? L.slice(0,50).map((x,i)=>'<div class="rk'+(x.sid===ms?' me':'')+'"><span class="no">'+(i+1)+'</span><span class="nm">'+esc(D.schools[x.sid].name)+'</span><span class="ps">'+x.pts+'点</span><span class="nn">'+x.n+'回</span></div>').join('') : '<p class="rst">まだのっている学校がありません</p>'; return; } RKTAB=t; $('rt-p').className=t==='p'?'on':''; $('rt-a').className=t==='a'?'on':''; const R=RK; if(!R) return;
+    $('rlist2').innerHTML=L.length? L.slice(0,50).map((x,i)=>'<div class="rk'+(x.sid===ms?' me':'')+'"><span class="no">'+(i+1)+'</span><span class="nm">'+esc(D.schools[x.sid].name)+'</span><span class="ps">'+x.pts+'点</span><span class="nn">'+x.u+'人</span></div>').join('') : '<p class="rst">まだのっている学校がありません</p>'; return; } RKTAB=t; $('rt-p').className=t==='p'?'on':''; $('rt-a').className=t==='a'?'on':''; const R=RK; if(!R) return;
   const box=$('rlist2'); if(!R.open){ box.innerHTML='<p class="rst">参戦が'+R.need+'人をこえたら<br>ここにランキングが出ます</p>'; return; }
   const ms=mySid(), mp=ms&&D.schools[ms]?prefLabel(D.schools[ms].region):'';
   let L=R.list.filter(x=>D.schools[x.sid]); if(t==='p'&&mp) L=L.filter(x=>prefLabel(D.schools[x.sid].region)===mp);

@@ -95,16 +95,17 @@ function render(){
   const R=RAW.results.map(r=>({t:r[0],sid:r[1],q:+r[2],gs:+r[3],win:+r[4],c:r[5],grad:r[6],ref:r[7]})).filter(o=>ok(o.t,o.c));
   const A=RAW.answers.map(r=>({t:r[0],sid:r[1],win:+r[2],c:r[3],ans:String(r[4]||'')})).filter(o=>ok(o.t,o.c));
   const Q=RAW.quits.map(r=>({t:r[0],why:r[1],q:+r[2],gs:+r[3],c:r[4],ref:r[5]})).filter(o=>ok(o.t,o.c));
-  const S=RAW.shares.map(r=>({t:r[0],k:r[1],c:r[2],win:+r[3],q:+r[4]})).filter(o=>ok(o.t,o.c));
+  const S0=RAW.shares.map(r=>({t:r[0],k:r[1],c:r[2],win:+r[3],q:+r[4]})).filter(o=>ok(o.t,o.c));
+  const RO=S0.filter(o=>/rank-open/.test(o.k)), S=S0.filter(o=>!/rank-open/.test(o.k));
   const P=RAW.posts.map(r=>({t:r[0],sid:r[1],text:r[2],grad:r[3],c:r[4]})).filter(o=>ok(o.t,o.c));
   const VER=$('ver').value; if(VER){ const isNow=VER==='now', vk=(b)=>b===isNow;
-    [[R,o=>String(o.ref||'').startsWith('now:')||o.grad==='現役'],[A,o=>o.ans.startsWith('YK:')],[Q,o=>String(o.ref||'').startsWith('now:')],[S,o=>String(o.k||'').startsWith('now-')],[P,o=>o.grad==='現役']]
+    [[R,o=>String(o.ref||'').startsWith('now:')||o.grad==='現役'],[A,o=>o.ans.startsWith('YK:')],[Q,o=>String(o.ref||'').startsWith('now:')],[S,o=>String(o.k||'').startsWith('now-')],[RO,o=>String(o.k||'').startsWith('now-')],[P,o=>o.grad==='現役']]
       .forEach(([arr,f])=>{ const keep=arr.filter(o=>vk(!!f(o))); arr.length=0; keep.forEach(x=>arr.push(x)); }); }
   const win=R.filter(o=>o.win), w1=win.filter(o=>o.gs===1);
   const devs=new Set(R.map(o=>o.c));
   let h=`<div class="kpis" style="margin-top:12px">${[kpi(R.length,'遊ばれた回数'),kpi(devs.size,'遊んだ端末'),kpi(new Set(R.map(o=>o.sid)).size,'遊ばれた学校'),kpi(new Set(win.map(o=>o.sid)).size,'当たった学校'),
     kpi(pct(win.length,R.length),'当たる率（3回まで）'),kpi(pct(w1.length,R.length),'1回目で当たる率'),kpi(R.length?(R.reduce((a,o)=>a+o.q,0)/R.length).toFixed(1)+'問':'—','平均の質問数'),
-    kpi(Q.length,'途中でやめた'),kpi(S.length,'シェア'),kpi(P.length,'あるある投稿')].join('')}</div>`;
+    kpi(Q.length,'途中でやめた'),kpi(S.length,'シェア'),kpi(RO.length+'回／'+new Set(RO.map(o=>o.c)).size+'台','ランキングを開いた'),kpi(P.length,'あるある投稿')].join('')}</div>`;
   // 1 遊ばれ方
   h+='<h3>1. 遊ばれ方</h3>';
   const ds=[...new Set(R.map(o=>day(o.t)))].sort();

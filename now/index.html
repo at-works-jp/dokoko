@@ -316,7 +316,7 @@ function rankMsg(R){ if(!R) return ''; if(!R.open) return 'ランキングは'+R
   if(!R.mine) return ''; return R.mine.listed ? 'あなたの学校はいま<b>'+R.mine.rank+'位</b>' : 'あなたの学校はまだランキングにのっていません<br>あと1人参戦でのります'; }
 function loadStatus(el){ $(el).innerHTML=''; setTimeout(()=>gas('getNowRanking',{sid:mySid()},R=>{ $(el).innerHTML=rankMsg(R); }),2500); }
 let RK=null, RKTAB='p';
-function showRank(){ show('s-rank'); $('rtotal').textContent='読みこみ中…'; $('rmine').innerHTML=''; $('rlist2').innerHTML='';
+function showRank(){ try{ lsh('rank-open'); }catch(e){} show('s-rank'); $('rtotal').textContent='読みこみ中…'; $('rmine').innerHTML=''; $('rlist2').innerHTML='';
   gas('getNowRanking',{sid:mySid()},R=>{ RK=R; $('rtotal').textContent='いま'+R.total+'人が参戦中'; $('rmine').innerHTML=rankMsg(R);
     const ms=mySid(); RKTAB=ms&&D.schools[ms]?'p':'a'; rankTab(RKTAB); }); }
 function rankTab(t){ RKTAB=t; $('rt-p').className=t==='p'?'on':''; $('rt-a').className=t==='a'?'on':''; const R=RK; if(!R) return;
