@@ -936,7 +936,7 @@ function showRank(){
       let me=''; try{ me=localStorage.getItem('koukou-last-sid')||''; }catch(e){}
       const qq=($('rankSearch').value||'').trim();
       const rows=pw.map(([sid,r],i)=>[sid,r,i+1]).filter(([sid])=>!qq || shortName(sid).includes(qq) || ((D.schools[sid]||{}).old||[]).some(x=>x.includes(qq)));
-      $('powRank').innerHTML = rows.length ? rows.map(([sid,r,k])=>`<tr id="rk_${sid}"${sid===me?' style="background:#f6e7a8"':''}><td class="n">${k}</td><td>${shortName(sid)}<div class="small">${r.u}人が遊んだ</div></td><td class="v">${r.pts}点</td></tr>`).join('')
+      $('powRank').innerHTML = rows.length ? rows.map(([sid,r,k])=>`<tr id="rk_${sid}"${sid===me?' style="background:#f6e7a8"':''}><td class="n">${k}</td><td>${shortName(sid)}<div class="small">${['遊んだ'+r.u, r.a?'あるある'+r.a:'', r.f?'友だち'+r.f:''].filter(Boolean).join('・')}</div></td><td class="v">${r.pts}点</td></tr>`).join('')
         : (qq ? '<tr><td class="small">見つかりません（まだ点がない学校かもしれません）</td></tr>' : '<tr><td class="small">まだ記録がありません。最初の1点を母校に入れよう。</td></tr>');
       const mi=pw.findIndex(([sid])=>sid===me);
       if(mi>=0){ $('myRank').style.display=''; $('myRank').innerHTML=`<b>あなたの母校</b>　${shortName(me)}：<b>${mi+1}位</b>（${pw[mi][1].pts}点）<span class="small">　タップで表の中へ</span>`;
@@ -948,7 +948,7 @@ function showRank(){
   $('rankSearch').value=''; $('rankSearch').oninput=()=>draw(); $('rankBox').scrollTop=0;
   tabs(); draw(); $('counter').textContent='ランキング'; show('s-rank'); try{ if(GAS) GAS.withFailureHandler(()=>{}).logShare({kind:'rank-open',client:clientId()}); }catch(e){}
   if(GAS){ $('powRank').innerHTML='<tr><td class="small">読み込み中…</td></tr>';
-    GAS.withSuccessHandler(rows=>{ (rows||[]).forEach(r=>{ if(r && typeof r.sid==='string' && D.schools[r.sid]) live[r.sid]={sid:r.sid,n:+r.n||0,u:+r.u||0,hit:+r.hit||0,miss:+r.miss||0,pts:+r.pts||0}; }); draw(); }).withFailureHandler(()=>{ $('powRank').innerHTML='<tr><td class="small">読み込めませんでした</td></tr>'; }).getRanking(); }
+    GAS.withSuccessHandler(rows=>{ (rows||[]).forEach(r=>{ if(r && typeof r.sid==='string' && D.schools[r.sid]) live[r.sid]={sid:r.sid,n:+r.n||0,u:+r.u||0,a:+r.a||0,f:+r.f||0,hit:+r.hit||0,miss:+r.miss||0,pts:+r.pts||0}; }); draw(); }).withFailureHandler(()=>{ $('powRank').innerHTML='<tr><td class="small">読み込めませんでした</td></tr>'; }).getRanking(); }
 }
 
 // ---- 逆モード ----
