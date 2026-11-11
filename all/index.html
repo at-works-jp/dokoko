@@ -96,7 +96,7 @@ textarea,input[type=text]{width:100%;border:2px solid var(--line);border-radius:
   <button class="btn" onclick="$('decbox').style.display='none';$('mold').classList.remove('on');show('s-mode')">はじめる</button>
   <p class="note" style="text-align:center">学校名や名前を入力することはありません</p>
   <button class="btn ghost" onclick="showRank()">学校パワーランキング</button>
-  <p class="note" style="text-align:center;margin-top:2px">遊ぶと1点・友だちが遊ぶと2点・あるあるで3点<br>学校を応援しよう</p>
+  <p class="note" style="text-align:center;margin-top:2px">参戦すると1点・友だちが参戦すると2点・あるあるで3点<br>学校を応援しよう</p>
 </section>
 
 <!-- 高校生？卒業生？ -->
@@ -199,7 +199,7 @@ textarea,input[type=text]{width:100%;border:2px solid var(--line);border-radius:
     <button class="btn mint" onclick="postAru()">送る</button>
     <div class="ok" id="aruok"></div>
   </div>
-  <div class="card"><h2>友だちにも試してもらう<span class="pt">友だちが遊ぶと+2点</span></h2><button class="btn mint" onclick="imgShare('hit')">画像でシェア</button><div class="share" id="sharehit"></div><div id="imgbox-hit" style="display:none"><p class="note">画像を長押しして保存してね</p><img id="imgout-hit" style="width:100%;border-radius:12px"></div></div>
+  <div class="card"><h2>友だちにも試してもらう<span class="pt">友だちが参戦すると+2点</span></h2><button class="btn mint" onclick="imgShare('hit')">画像でシェア</button><div class="share" id="sharehit"></div><div id="imgbox-hit" style="display:none"><p class="note">画像を長押しして保存してね</p><img id="imgout-hit" style="width:100%;border-radius:12px"></div></div>
   <div class="card nowonly"><h2>よかったら学年を教えて</h2><div class="chips gradeb"><button class="chip" onclick="setGrade(1,this)">1年</button><button class="chip" onclick="setGrade(2,this)">2年</button><button class="chip" onclick="setGrade(3,this)">3年</button></div><div class="note">記録にだけ使います。ほかの人には見えません</div></div>
   <button class="btn ghost" onclick="showRank()">学校パワーランキングを見る</button>
   <button class="btn ghost" onclick="again()">もう一回あそぶ</button>
@@ -248,7 +248,7 @@ textarea,input[type=text]{width:100%;border:2px solid var(--line);border-radius:
     <button class="btn mint" onclick="postAru(2)">送る</button>
     <div class="ok" id="aruok2"></div>
   </div>
-  <div class="card"><h2>友だちにも試してもらう<span class="pt">友だちが遊ぶと+2点</span></h2><div class="share" id="sharepick"></div></div>
+  <div class="card"><h2>友だちにも試してもらう<span class="pt">友だちが参戦すると+2点</span></h2><div class="share" id="sharepick"></div></div>
   <div class="card nowonly"><h2>よかったら学年を教えて</h2><div class="chips gradeb"><button class="chip" onclick="setGrade(1,this)">1年</button><button class="chip" onclick="setGrade(2,this)">2年</button><button class="chip" onclick="setGrade(3,this)">3年</button></div><div class="note">記録にだけ使います。ほかの人には見えません</div></div>
   <button class="btn ghost" onclick="showRank()">学校パワーランキングを見る</button>
   <button class="btn ghost" onclick="again()">もう一回あそぶ</button>
@@ -262,7 +262,7 @@ textarea,input[type=text]{width:100%;border:2px solid var(--line);border-radius:
   <div class="tabs" id="rmode"><button id="rm-now" onclick="rankMode('now')">高校生</button><button id="rm-old" onclick="rankMode('old')">卒業生</button></div>
   <div class="tabs" id="rtabs"><button id="rt-p" onclick="rankTab('p')">自分の県</button><button id="rt-a" onclick="rankTab('a')">全国</button></div>
   <div class="card" id="rlistbox"><div id="rlist2"></div></div>
-  <div class="card" id="rrule"><h2>学校パワーのため方</h2><div style="font-size:14px;line-height:1.9">・最後まで遊ぶと 1点<br>・シェアして友だちが遊ぶと 1人につき2点<br>・学校のあるあるを書くと 3点</div>
+  <div class="card" id="rrule"><h2>学校パワーのため方</h2><div style="font-size:14px;line-height:1.9">・参戦すると 1点<br>・シェアして友だちが参戦すると 1人につき2点<br>・学校のあるあるを書くと 3点</div>
   <div class="note">全体で100人をこえたら公開します<br>2人以上が参戦した学校だけをのせます</div></div>
   <button class="btn ghost" onclick="again()">もどる</button>
 </section>
@@ -344,7 +344,7 @@ function showRankNow(){ show('s-rank'); $('rtotal').textContent='読みこみ中
 function rankMode(m){ RKM=m; $('rm-now').className=m==='now'?'on':''; $('rm-old').className=m==='old'?'on':''; $('rrule').style.display=m==='now'?'':'none';
   if(m==='now') return showRankNow();
   show('s-rank'); $('rtotal').textContent='読みこみ中…'; $('rmine').innerHTML=''; $('rlist2').innerHTML='';
-  gas('getRanking',{},R=>{ RKO=(R||[]).filter(x=>x&&x.u>=2).sort((a,b)=>b.pts-a.pts||b.u-a.u); $('rtotal').textContent='卒業生の母校パワーランキング'; $('rmine').innerHTML='<span style="font-size:12px;color:var(--soft)">遊ぶと1点・友だちが遊ぶと2点・あるあるで3点（2人以上が遊んだ学校がのります）</span>'; rankTab(mySid()&&D.schools[mySid()]?'p':'a'); }); }
+  gas('getRanking',{},R=>{ RKO=(R||[]).filter(x=>x&&x.u>=2).sort((a,b)=>b.pts-a.pts||b.u-a.u); $('rtotal').textContent='卒業生の母校パワーランキング'; $('rmine').innerHTML='<span style="font-size:12px;color:var(--soft)">参戦すると1点・友だちが参戦すると2点・あるあるで3点（2人以上が参戦した学校がのります）</span>'; rankTab(mySid()&&D.schools[mySid()]?'p':'a'); }); }
 function rankTab(t){ if(RKM==='old'){ RKTAB=t; $('rt-p').className=t==='p'?'on':''; $('rt-a').className=t==='a'?'on':''; const ms=mySid(), mp=ms&&D.schools[ms]?prefLabel(D.schools[ms].region):'';
     let L=(RKO||[]).filter(x=>D.schools[x.sid]); if(t==='p'&&mp) L=L.filter(x=>prefLabel(D.schools[x.sid].region)===mp); $('rt-p').textContent=mp?mp:'自分の県';
     $('rlist2').innerHTML=L.length? L.slice(0,50).map((x,i)=>'<div class="rk'+(x.sid===ms?' me':'')+'"><span class="no">'+(i+1)+'</span><span class="nm">'+esc(D.schools[x.sid].name)+'</span><span class="ps">'+x.pts+'点</span><span class="nn">'+x.u+'人</span></div>').join('') : '<p class="rst">まだのっている学校がありません</p>'; return; } RKTAB=t; $('rt-p').className=t==='p'?'on':''; $('rt-a').className=t==='a'?'on':''; const R=RK; if(!R) return;
