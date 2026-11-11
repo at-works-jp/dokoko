@@ -22,6 +22,11 @@
   .counter{font-size:13px;color:var(--sub)}
   .map{position:relative;background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;aspect-ratio:400/330}
   .map svg{width:100%;height:100%;display:block}
+  .leftb{display:inline-block;background:#f6e7a8;color:#3a2a1a;border-radius:999px;padding:4px 14px;font-weight:700;font-size:14px;margin:0 0 8px}
+  .leftb b{font-size:22px;margin:0 2px;display:inline-block}
+  .leftb b.pop{animation:pop .5s ease}
+  @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.5);color:#c8462b}100%{transform:scale(1)}}
+  #s-near .list button.cand{font-weight:700}
   .maplabel{position:absolute;left:12px;bottom:8px;font-size:11px;color:var(--sub)}
   .dot{transition:r .6s cubic-bezier(.2,.8,.2,1),opacity .6s,fill .6s}
   .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 20px;margin-top:14px}
@@ -175,6 +180,7 @@
 
   <!-- 質問 -->
   <section class="card hidden" id="s-q">
+    <div class="leftb" id="leftBadge">のこり候補 <b id="leftNum">—</b> 校</div>
     <div class="qno" id="qno">QUESTION 1</div>
     <div id="missMsg" class="hidden" style="background:#f6e7a8;color:#3a2a1a;border-radius:10px;padding:10px 12px;margin:8px 0;font-weight:700;font-size:14px;line-height:1.6">ちがいましたか…<br>お願いです<br>もうちょっとだけ質問させてください</div>
     <div style="color:#f6e7a8;font-size:14px;margin-bottom:6px">※ 高校生のころのことで答えてください</div>
@@ -198,6 +204,12 @@
       <button class="yes" id="rightBtn">当たった…</button>
       <button class="no" id="wrongBtn">ちがう</button>
     </div>
+  </section>
+
+  <!-- 外れたあとの候補 -->
+  <section class="card hidden" id="s-near">
+    <div class="qtext" style="min-height:0">くやしい…！<br><span style="font-size:15px">AIの次の候補はこの3校です。この中にありますか？</span></div>
+    <div class="list" id="nearList"></div>
   </section>
 
   <!-- 正解選択 -->
@@ -586,10 +598,11 @@ function updateMap(showLabels){
   } else box.classList.remove('on');
   const alive=Object.values(m).filter(v=>v/mx>.1).length;
   $('maplabel').textContent = `のこり候補：およそ ${alive} 校`;
+  const ln=$('leftNum'); if(ln){ const prev=+ln.dataset.v||0; ln.textContent=alive; ln.dataset.v=alive; if(prev && alive<prev){ ln.classList.remove('pop'); void ln.offsetWidth; ln.classList.add('pop'); } }
 }
 
 // ---- 画面 ----
-function show(id){ for(const s of ['s-start','s-q','s-guess','s-pick','s-end','s-rev','s-revpick','s-rank','s-watch','s-key','s-album']) $(s).classList.add('hidden');
+function show(id){ for(const s of ['s-start','s-q','s-guess','s-near','s-pick','s-end','s-rev','s-revpick','s-rank','s-watch','s-key','s-album']) $(s).classList.add('hidden');
   try{ $('keyBtn').style.display = id==='s-start' ? 'block' : 'none'; }catch(e){}
   $(id).classList.remove('hidden'); $(id).classList.remove('fade'); void $(id).offsetWidth; $(id).classList.add('fade'); }
 
@@ -661,6 +674,18 @@ $('wrongBtn').onclick=()=>{
   const t=E.top(D,g); E.exclude(D,g,t.sid);
   log.push(`予想${guesses}：${t.school} → ちがう`);
   if(guesses>=3) return pick();
+  near();
+};
+let NEAR=false;
+function near(){
+  const l=$('nearList'); l.innerHTML='';
+  let top=[]; try{ top=E.schoolMarg(D,g.post).filter(([sid])=>!g.excluded.has(sid)&&D.schools[sid]).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([sid])=>sid); }catch(e){}
+  top.forEach(sid=>{ const b=document.createElement('button'); b.className='cand'; b.textContent=D.schools[sid].name; b.onclick=()=>{ guesses++; NEAR=true; log.push(`候補から選んだ：${D.schools[sid].name}`); end(true,{school:D.schools[sid].name,sid}); }; l.appendChild(b); });
+  const m=document.createElement('button'); m.className='soft'; m.textContent='ない → あと4問だけ答える'; m.onclick=moreQ; l.appendChild(m);
+  const a=document.createElement('button'); a.className='ghost'; a.textContent='もう答えを教える'; a.onclick=()=>{ log.push('答えを教える'); pick(); }; l.appendChild(a);
+  updateMap(false); show('s-near');
+}
+function moreQ(){
   g.n=Math.max(g.n,0); // 続けて質問
   updateMap(false); g.forceMore=true;
   // 追加で数問聞いてから次の予想
@@ -668,7 +693,7 @@ $('wrongBtn').onclick=()=>{
     showQ(curQ,'もう少しだけ… '); if(g.n===n0) $('missMsg').classList.remove('hidden');
     document.querySelectorAll('#s-q [data-a]').forEach(b=>b.onclick=()=>{ const a=b.dataset.a; answerQ(a); loop(); });
   }; loop();
-};
+}
 const REGION_NAME={"gifu": "岐阜市", "gifupref": "岐阜県（岐阜市以外）", "aichi": "愛知県", "mie": "三重県", "toyama": "富山県", "ishikawa": "石川県", "fukui": "福井県", "shiga": "滋賀県", "kyoto": "京都府", "nara": "奈良県", "wakayama": "和歌山県", "kobe": "神戸市", "hyogopref": "兵庫県（神戸市以外）", "osaka": "大阪市", "osakapref": "大阪府（大阪市以外）", "tottori": "鳥取県", "shimane": "島根県", "okayama": "岡山県", "hiroshima": "広島県", "yamaguchi": "山口県", "kagawa": "香川県", "tokushima": "徳島県", "ehime": "愛媛県", "kochi": "高知県", "fukuoka": "福岡県", "saga": "佐賀県", "nagasaki": "長崎県", "kumamoto": "熊本市", "kumamotopref": "熊本県（熊本市以外）", "oita": "大分県", "miyazaki": "宮崎県", "kagoshima": "鹿児島県", "okinawa": "沖縄県", "shizuoka": "静岡県", "nagano": "長野県", "niigata": "新潟県", "yamanashi": "山梨県", "kanagawa": "神奈川県", "tokyo": "東京都", "saitama": "埼玉県", "chiba": "千葉県", "ibaraki": "茨城県", "tochigi": "栃木県", "gunma": "群馬県", "miyagi": "宮城県", "fukushima": "福島県", "yamagata": "山形県", "iwate": "岩手県", "akita": "秋田県", "aomori": "青森県", "hokkaido": "北海道"};
 function scode(sid){ let h=0x811c9dc5; const t='dk'+sid; for(let i=0;i<t.length;i++){ h^=t.charCodeAt(i); h=Math.imul(h,0x01000193)>>>0; } return ('000000'+h.toString(36)).slice(-6); }
 const APP_URL='https://at-works-jp.github.io/dokoko/';
@@ -696,7 +721,7 @@ function end(win,t){
   GST={endAt:Date.now(),sid:t.sid,school:t.school,decade:t.decade||'',win:!!win,n:g.n,guesses,shares:[],post:'',cfm:0}; try{ localStorage.setItem('koukou-plays',String((+localStorage.getItem('koukou-plays')||0)+1)); }catch(e){}
   gameOpen=false; try{ localStorage.removeItem('koukou-pending'); localStorage.setItem('koukou-lastq', JSON.stringify(g.asked.map(i=>(D.questions[i]||{}).id).filter(x=>x&&!/^GEO_/.test(x)))); }catch(e){}
   const pts = win ? Math.max(0,30-g.n) * (guesses>1?0.5:1) : 0;
-  $('endSub').textContent = win ? `${g.n}問で当てられました` : '当てられませんでした';
+  $('endSub').textContent = win ? (NEAR ? `${g.n}問で候補3校までしぼられました` : `${g.n}問で当てられました`) : '当てられませんでした'; NEAR=false;
   $('endName').textContent = t.school;
   $('endPts').textContent = win ? '' : 'AIに当てられなかった！';  // 点の表示は report() で出す
   report(t.sid, t.school, g.n, guesses, win);
