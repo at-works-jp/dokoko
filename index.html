@@ -121,6 +121,15 @@
   .kbox input.lit{border:2px solid var(--accent);box-shadow:0 0 6px #c8462b55}
   .album li{padding:8px 0;border-bottom:1px solid var(--line);font-size:15px;list-style:none}
   .album ul{padding:0;margin:8px 0 12px}
+
+#sendOv{position:fixed;inset:0;background:#2a242099;display:flex;align-items:center;justify-content:center;z-index:50;padding:18px}
+#sendOv .box{background:var(--card);border-radius:20px;padding:22px 20px 16px;max-width:400px;width:100%;text-align:center;box-shadow:0 10px 40px #0005;animation:popin .35s ease}
+@keyframes popin{0%{transform:scale(.85);opacity:0}100%{transform:scale(1);opacity:1}}
+#sendOv .ovbig{font-size:30px;font-weight:900;color:var(--accent);line-height:1.3;margin:4px 0 6px}
+#sendOv .lead{font-size:16px;font-weight:700;margin-bottom:14px}
+#sendOv .sendBtn{display:block;width:100%;background:var(--accent);color:#fff;border:0;border-radius:14px;padding:18px 10px;font-size:20px;font-weight:900;font-family:inherit;box-shadow:0 4px 0 #8f3a22}
+#sendOv .pv{background:#f5efe4;border:1px dashed var(--line);border-radius:10px;text-align:left;font-size:12px;line-height:1.7;color:#5a4f45;padding:10px 12px;margin:12px 0 8px;white-space:pre-wrap;word-break:break-all}
+#sendOv .later{background:none;border:0;color:var(--sub);font-size:13px;padding:8px;font-family:inherit}
 </style>
 </head>
 <body>
@@ -753,6 +762,7 @@ function end(win,t){
   try{ const sr=(D.schools[t.sid]||{}).region; if(sr) localStorage.setItem('koukou-pref', prefLabel(sr)); }catch(e){}
   $('hist').innerHTML=log.map(x=>x.replace(/</g,'&lt;')).join('<br>');
   $('counter').textContent='結果'; show('s-end');
+  if(win){ $('ovBig').textContent=g.n+'問でバレた！'; $('ovPv').textContent=txt; setTimeout(()=>{ if(!$('s-end').classList.contains('hidden')) $('sendOv').style.display='flex'; },900); }
   document.querySelectorAll('#s-q [data-a]').forEach(b=>b.onclick=()=>{ const a=b.dataset.a; if(curQ===null){ pintoAnswer(a); return ask(); } answerQ(a); ask(); });
 }
 let postSid=null;
@@ -1219,6 +1229,21 @@ function updateCloud(m, done){
 }
 
 drawMap(); g=E.newGame(D); updateMap(false); $('maplabel').textContent='';
+</script>
+<div id="sendOv" style="display:none"><div class="box">
+<div class="small">あなたの母校は</div>
+<div class="ovbig" id="ovBig"></div>
+<div class="lead">友だちにも挑戦させてみる？</div>
+<button class="sendBtn" id="ovSend">友だちに送る</button>
+<div class="pv" id="ovPv"></div>
+<button class="later" id="ovLater">あとで</button>
+</div></div>
+<script>
+document.getElementById('ovLater').onclick=()=>{ document.getElementById('sendOv').style.display='none'; try{ logShare('pop-later'); }catch(e){} };
+document.getElementById('ovSend').onclick=async()=>{ try{ logShare('pop-send'); }catch(e){}
+  const btn=document.getElementById('ovSend');
+  try{ if(navigator.share){ await navigator.share({text:LAST.txt}); document.getElementById('sendOv').style.display='none'; return; } }catch(e){ if(e&&e.name==='AbortError') return; }
+  try{ await navigator.clipboard.writeText(LAST.txt); btn.textContent='コピーしました！LINEなどに貼ってね'; }catch(e){ btn.textContent='下の文を長押しでコピーしてね'; } };
 </script>
 </body>
 </html>
