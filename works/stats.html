@@ -89,8 +89,13 @@ function vbars(title,keys,s1,s2,leg){ const max=Math.max(1,...s1,...(s2||[]));
 const SN_OLD=['','名前','作ったもの','これまで','相談できること','進め方','連絡先','いちばん下'];
 const SN_NEW=['','名前','相談できること','進め方','作ったもの','これまで','連絡先','いちばん下'];
 const ORDER_CHANGED='2026-11-04T22:00:00';
-const isNewOrder=t=>String(t)>=ORDER_CHANGED;
-const secName=(n,t)=>(isNewOrder(t)?SN_NEW:SN_OLD)[n]||'';
+// 11/20 21:20 にページを入れかえ。区切りは5つ（お問い合わせ＝4）
+const SN_V3=['','冒頭','作っているもの','大事にしていること','お問い合わせ','一番下'];
+const V3_START='2026-11-20T21:20:00';
+const isV3=t=>String(t)>=V3_START;
+const isNewOrder=t=>String(t)>=ORDER_CHANGED&&!isV3(t);
+const secName=(n,t)=>(isV3(t)?SN_V3:isNewOrder(t)?SN_NEW:SN_OLD)[n]||'';
+const sawContact=v=>v.sect>=(v.open&&isV3(v.open['日時'])?4:6);
 // ---- 本体 ----
 function render(){
   const H=RAW.head, idx=n=>H.indexOf(n), own=new Set(RAW.owners||[]), exOwn=$('exOwn').checked;
@@ -114,9 +119,9 @@ function render(){
   h+=`<div class="kpis" style="margin-top:12px">${[
     kpi(R.length,'結果画面が出た回数'), kpi(clicks.length,'リンクを押した回数'), kpi(pct(clicks.length,R.length),'押した率（回数）'),
     kpi(pct(cDev,rDev),'押した率（端末）'), kpi(visits.length,'ページを開いた'), kpi(median(durs)!=null?median(durs)+'秒':'—','見た時間（中央値）'),
-    kpi(pct(visits.filter(v=>v.sect>=6).length,visits.length),'連絡先まで見た'), kpi(mails.length,'メールを押した') ].join('')}</div>`;
+    kpi(pct(visits.filter(sawContact).length,visits.length),'連絡先まで見た'), kpi(mails.length,'メールを押した') ].join('')}</div>`;
   // 流れ
-  const f=[['結果画面',R.length],['リンクを押した',clicks.length],['ページを開いた',visits.length],['半分以上 下まで見た',visits.filter(v=>v.scroll>=50).length],['連絡先まで見た',visits.filter(v=>v.sect>=6).length],['メールを押した',new Set(mails.map(o=>o['訪問ID'])).size]];
+  const f=[['結果画面',R.length],['リンクを押した',clicks.length],['ページを開いた',visits.length],['半分以上 下まで見た',visits.filter(v=>v.scroll>=50).length],['連絡先まで見た',visits.filter(sawContact).length],['メールを押した',new Set(mails.map(o=>o['訪問ID'])).size]];
   h+=hbars('どこで離れたか（流れ）',f.map((e,i)=>[e[0],e[1],e[1]+(i?'（'+pct(e[1],f[i-1][1])+'）':'')]),{note:'かっこ内は、ひとつ前の段からの割合'});
   // 日ごと
   const dk=t=>String(t).slice(5,10); const dset=[...new Set([...R.map(o=>dk(o.t)),...clicks.map(o=>dk(o['日時']))])].sort();
@@ -148,8 +153,9 @@ function render(){
   h+='</div><h2 style="margin:22px 0 4px">ページの見られ方</h2><div class="grid">';
   h+=hbars('見た時間',count(visits,v=>bucket(v.dur,[5,15,30,60,180],['〜4秒','5〜14秒','15〜29秒','30〜59秒','1〜3分','3分〜']),['〜4秒','5〜14秒','15〜29秒','30〜59秒','1〜3分','3分〜']),{b:1});
   h+=hbars('どこまで下に見たか',count(visits,v=>bucket(v.scroll,[25,50,75,95],['〜24%','25〜49%','50〜74%','75〜94%','95〜100%']),['〜24%','25〜49%','50〜74%','75〜94%','95〜100%']),{b:1});
-  const vNew=visits.filter(v=>isNewOrder(v.open['日時'])), vOld=visits.filter(v=>!isNewOrder(v.open['日時']));
-  h+=hbars('どの区切りまで見たか（今の並び）',SN_NEW.slice(1).map((n,i)=>[n,vNew.filter(v=>v.sect>=i+1).length]),{b:1,note:'11/4 22時から。その区切りまで画面に出た訪問の数'});
+  const vV3=visits.filter(v=>isV3(v.open['日時'])), vNew=visits.filter(v=>isNewOrder(v.open['日時'])), vOld=visits.filter(v=>!isV3(v.open['日時'])&&!isNewOrder(v.open['日時']));
+  h+=hbars('どの区切りまで見たか（新しいページ）',SN_V3.slice(1).map((n,i)=>[n,vV3.filter(v=>v.sect>=i+1).length]),{b:1,note:'11/20 21:20から。その区切りまで画面に出た訪問の数'});
+  h+=hbars('どの区切りまで見たか（11/4〜11/20の並び）',SN_NEW.slice(1).map((n,i)=>[n,vNew.filter(v=>v.sect>=i+1).length]),{b:1,note:'11/4 22時〜11/20 21:20。その区切りまで画面に出た訪問の数'});
   if(vOld.length) h+=hbars('どの区切りまで見たか（前の並び）',SN_OLD.slice(1).map((n,i)=>[n,vOld.filter(v=>v.sect>=i+1).length]),{b:1,note:'11/4 22時より前'});
   const GN={dokoko:'どこ高',pasta:'回らないパスタ屋',clinic:'待たせないリハビリ室',factory:'造りすぎ工場'};
   h+=hbars('ページから作ったものを開いた',Object.keys(GN).map(k=>[GN[k],visits.filter(v=>v.go.has(k)).length]).concat([['どれも開いていない',visits.filter(v=>!v.go.size).length]]),{b:1});
