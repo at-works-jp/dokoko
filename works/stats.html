@@ -49,6 +49,7 @@
       <input id="pass" type="password" placeholder="運営の合言葉">
       <button id="go">読みこむ</button>
       <label class="sub"><input type="checkbox" id="exOwn" checked> 運営の端末の記録を除く</label>
+      <label class="sub"><input type="checkbox" id="exBot" checked> 海外のロボットらしい訪問を除く（言語が日本語でなく 時間帯も日本でないもの）</label>
       <select id="range"><option value="0">全期間</option><option value="1">今日</option><option value="7">直近7日</option><option value="30">直近30日</option></select>
       <span id="msg" class="sub"></span>
     </div>
@@ -61,7 +62,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let RAW=null;
 (function(){ const q=new URLSearchParams(location.search).get('o'); let p=q||''; if(!p){ try{ p=localStorage.getItem('koukou-admin')||''; }catch(e){} } $('pass').value=p; if(p) load(); })();
-$('go').onclick=load; $('exOwn').onchange=()=>RAW&&render(); $('range').onchange=()=>RAW&&render();
+$('go').onclick=load; $('exOwn').onchange=()=>RAW&&render(); $('exBot').onchange=()=>RAW&&render(); $('range').onchange=()=>RAW&&render();
 function load(){
   const pass=$('pass').value.trim(); if(!pass){ $('msg').textContent='合言葉を入れてください'; return; }
   $('msg').textContent='読みこみ中…';
@@ -98,10 +99,12 @@ const secName=(n,t)=>(isV3(t)?SN_V3:isNewOrder(t)?SN_NEW:SN_OLD)[n]||'';
 const sawContact=v=>v.sect>=(v.open&&isV3(v.open['日時'])?4:6);
 // ---- 本体 ----
 function render(){
-  const H=RAW.head, idx=n=>H.indexOf(n), own=new Set(RAW.owners||[]), exOwn=$('exOwn').checked;
+  const H=RAW.head, idx=n=>H.indexOf(n), own=new Set(RAW.owners||[]), exOwn=$('exOwn').checked, exBot=$('exBot').checked;
+  const isBot=o=>{ const l=String(o['言語']||''), z=String(o['時間帯']||''); return !!(l||z) && !/^ja/i.test(l) && z!=='Asia/Tokyo'; };
+  let nBot=0;
   const days=+$('range').value, since=days?new Date(Date.now()-(days===1?0:days-1)*864e5):null; if(since) since.setHours(0,0,0,0);
   const inRange=t=>!since||new Date(t)>=since;
-  const M=RAW.maker.map(r=>{ const o={}; H.forEach((h,i)=>o[h]=r[i]); return o; }).filter(o=>inRange(o['日時'])&&!(exOwn&&(+o['運営']||own.has(o['端末ID']))));
+  const M=RAW.maker.map(r=>{ const o={}; H.forEach((h,i)=>o[h]=r[i]); return o; }).filter(o=>inRange(o['日時'])&&!(exOwn&&(+o['運営']||own.has(o['端末ID'])))).filter(o=>{ if(exBot&&isBot(o)){ if(o['できごと']==='open') nBot++; return false; } return true; });
   const R=RAW.results.map(r=>({t:r[0],sid:r[1],q:+r[2],gs:+r[3],win:+r[4],c:r[5],ref:r[6]})).filter(o=>inRange(o.t)&&!(exOwn&&own.has(o.c)));
   const clicks=M.filter(o=>o['できごと']==='click'), opens=M.filter(o=>o['できごと']==='open'), mails=M.filter(o=>o['できごと']==='mail');
   // 訪問ごと（訪問IDでまとめる）
@@ -115,6 +118,7 @@ function render(){
   const cDev=new Set(clicks.map(o=>o['端末ID'])).size, rDev=new Set(R.map(o=>o.c)).size;
   const durs=visits.map(v=>v.dur).filter(x=>x>0);
   let h='';
+  if(exBot&&nBot) h+=`<div class="sub" style="margin-top:8px">海外のロボットらしい訪問 ${nBot}件を除いています</div>`;
   if(!M.length) h+=`<div class="note">まだ記録がありません。どこ高の結果画面の「このアプリを作った人」が押されると、ここに出てきます。</div>`;
   h+=`<div class="kpis" style="margin-top:12px">${[
     kpi(R.length,'結果画面が出た回数'), kpi(clicks.length,'リンクを押した回数'), kpi(pct(clicks.length,R.length),'押した率（回数）'),
