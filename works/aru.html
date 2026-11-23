@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>運営用｜あるあるサイトの分析</title>
+<style>
+  :root{ --bg:#f6f3ec; --ink:#1d232b; --sub:#6b6258; --accent:#c83c28; --bar:#2f6f8f; --bar2:#c9a33a; --card:#fff; --line:#e4dccd; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif; font-size:14px; line-height:1.6; }
+  .wrap{ max-width:980px; margin:0 auto; padding:20px 16px 60px; }
+  h1{ font-size:20px; margin:0 0 4px; } h2{ font-size:15px; margin:0 0 8px; }
+  .sub{ color:var(--sub); font-size:12px; }
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin:12px 0; }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:12px; }
+  .grid .card{ margin:0; }
+  .kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; }
+  .kpi{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px; }
+  .kpi b{ display:block; font-size:22px; } .kpi span{ font-size:12px; color:var(--sub); }
+  .row{ display:grid; grid-template-columns:120px 1fr 90px; gap:8px; align-items:center; margin:3px 0; font-size:13px; }
+  .row .lab{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .track{ background:#eee8dc; border-radius:4px; height:14px; position:relative; overflow:hidden; }
+  .fill{ background:var(--bar); height:100%; border-radius:4px; }
+  .fill.b{ background:var(--bar2); }
+  .val{ text-align:right; font-variant-numeric:tabular-nums; }
+  table{ border-collapse:collapse; width:100%; font-size:12px; }
+  th,td{ border-bottom:1px solid var(--line); padding:4px 6px; text-align:left; white-space:nowrap; }
+  th{ background:#faf7f0; position:sticky; top:0; }
+  .scroll{ overflow:auto; max-height:420px; }
+  .bars{ display:flex; align-items:flex-end; gap:2px; height:120px; border-bottom:1px solid var(--line); }
+
+
+  .axis{ display:flex; gap:2px; font-size:10px; color:var(--sub); }
+  .axis span{ flex:1; text-align:center; overflow:hidden; }
+  input,button,select{ font:inherit; padding:6px 10px; border-radius:8px; border:1px solid var(--line); }
+  button{ background:var(--ink); color:#fff; border:0; cursor:pointer; }
+  .note{ background:#fff7e0; border:1px solid #efd9a0; border-radius:10px; padding:8px 12px; font-size:13px; }
+  .legend span{ display:inline-block; width:10px; height:10px; border-radius:2px; margin:0 4px 0 10px; vertical-align:middle; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>あるあるサイト（dokoko.mendomilab.com）の分析</h1>
+  <div class="sub">運営だけが見られるページです。記録はスプレッドシート「作った人ページ記録」のうち あるあるサイトの行と、どこ高の結果ログ（来た元が aru-…）から読んでいます。運営の端末は あるあるサイトを一度 ?own=1 つきで開くと記録されなくなります。</div>
+
+  <div class="card" id="login">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <input id="pass" type="password" placeholder="運営の合言葉">
+      <button id="go">読みこむ</button>
+      <label class="sub"><input type="checkbox" id="exOwn" checked> 運営の端末の記録を除く</label>
+      <label class="sub"><input type="checkbox" id="exBot" checked> 海外のロボットらしい訪問を除く（言語が日本語でなく 時間帯も日本でないもの）</label>
+      <select id="range"><option value="0">全期間</option><option value="1">今日</option><option value="7">直近7日</option><option value="30">直近30日</option></select>
+      <span id="msg" class="sub"></span>
+    </div>
+  </div>
+  <div id="out"></div>
+</div>
+<script>
+const API='https://script.google.com/macros/s/AKfycbwvDe4IB8MTCbk8fFIwR8zSEFPdmAZ8S2rEXPCSkZ0zkuhaToa9XshZN86Qet4Wco77/exec';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let RAW=null;
+(function(){ const q=new URLSearchParams(location.search).get('o'); let p=q||''; if(!p){ try{ p=localStorage.getItem('koukou-admin')||''; }catch(e){} } $('pass').value=p; if(p) load(); })();
+$('go').onclick=load; $('exOwn').onchange=()=>RAW&&render(); $('exBot').onchange=()=>RAW&&render(); $('range').onchange=()=>RAW&&render();
+function load(){
+  const pass=$('pass').value.trim(); if(!pass){ $('msg').textContent='合言葉を入れてください'; return; }
+  $('msg').textContent='読みこみ中…';
+  fetch(API,{method:'POST',body:JSON.stringify({fn:'getMakerStats',args:[{pass}]})}).then(r=>r.json()).then(j=>{
+    if(!j||!j.ok||!j.r||!j.r.ok){ $('msg').textContent=(j&&j.r&&j.r.msg)||'読みこめませんでした'; return; }
+    try{ localStorage.setItem('koukou-admin',pass); }catch(e){}
+    RAW=j.r; $('msg').textContent='読みこみました（'+new Date().toLocaleString('ja-JP')+'）'; render();
+  }).catch(e=>{ $('msg').textContent='読みこめませんでした：'+e; });
+}
+// ---- 小さな部品 ----
+const pct=(a,b)=>b?Math.round(1000*a/b)/10+'%':'—';
+const median=a=>{ if(!a.length) return null; const s=[...a].sort((x,y)=>x-y), m=s.length>>1; return s.length%2?s[m]:Math.round((s[m-1]+s[m])/2); };
+function kpi(v,l){ return `<div class="kpi"><b>${esc(v)}</b><span>${esc(l)}</span></div>`; }
+function hbars(title,entries,opt){ opt=opt||{}; const max=Math.max(1,...entries.map(e=>e[1]));
+  const rows=entries.map(e=>`<div class="row"><div class="lab" title="${esc(e[0])}">${esc(e[0])}</div><div class="track"><div class="fill ${opt.b?'b':''}" style="width:${100*e[1]/max}%"></div></div><div class="val">${esc(e[2]!=null?e[2]:e[1])}</div></div>`).join('');
+  return `<div class="card"><h2>${esc(title)}</h2>${opt.note?`<div class="sub" style="margin-bottom:6px">${esc(opt.note)}</div>`:''}${rows||'<div class="sub">まだ記録がありません</div>'}</div>`; }
+function count(arr,key,order){ const m=new Map(); arr.forEach(x=>{ const k=key(x); if(k===undefined) return; m.set(k,(m.get(k)||0)+1); });
+  let e=[...m.entries()]; if(order) e.sort((a,b)=>order.indexOf(a[0])-order.indexOf(b[0])); else e.sort((a,b)=>b[1]-a[1]); return e; }
+function bucket(v,edges,labels){ if(v===''||v==null||isNaN(v)) return '不明'; v=+v; for(let i=0;i<edges.length;i++) if(v<edges[i]) return labels[i]; return labels[labels.length-1]; }
+function vbars(title,keys,s1,s2,leg){ const max=Math.max(1,...s1,...(s2||[]));
+  const bars=keys.map((k,i)=>`<div style="flex:1;display:flex;gap:1px;align-items:flex-end;height:100%"><div title="${esc(k)} ${s1[i]}" style="flex:1;min-height:1px;height:${100*s1[i]/max}%;background:var(--bar)"></div>${s2?`<div title="${esc(k)} ${s2[i]}" class="b" style="flex:1;height:${100*s2[i]/max}%;background:var(--bar2)"></div>`:''}</div>`).join('');
+  const step=Math.ceil(keys.length/12); const ax=keys.map((k,i)=>`<span>${i%step===0?esc(k):''}</span>`).join('');
+  return `<div class="card"><h2>${esc(title)}</h2>${leg?`<div class="sub legend">${leg}</div>`:''}<div class="bars">${bars}</div><div class="axis">${ax}</div></div>`; }
+// 紹介ページの区切り（data-sec）の名前。11/4 22時に並びを変えた
+const SN_OLD=['','名前','作ったもの','これまで','相談できること','進め方','連絡先','いちばん下'];
+const SN_NEW=['','名前','相談できること','進め方','作ったもの','これまで','連絡先','いちばん下'];
+const ORDER_CHANGED='2026-11-04T22:00:00';
+// 11/20 21:20 にページを入れかえ。区切りは5つ（お問い合わせ＝4）
+const SN_V3=['','冒頭','作っているもの','大事にしていること','お問い合わせ','一番下'];
+const V3_START='2026-11-20T21:20:00';
+const isV3=t=>String(t)>=V3_START;
+const isNewOrder=t=>String(t)>=ORDER_CHANGED&&!isV3(t);
+const secName=(n,t)=>(isV3(t)?SN_V3:isNewOrder(t)?SN_NEW:SN_OLD)[n]||'';
+const sawContact=v=>v.sect>=(v.open&&isV3(v.open['日時'])?4:6);
+// ---- 本体 ----
+function render(){
+  const H=RAW.head, own=new Set(RAW.owners||[]), exOwn=$('exOwn').checked, exBot=$('exBot').checked;
+  const isBot=o=>{ const l=String(o['言語']||''), z=String(o['時間帯']||''); return !!(l||z) && !/^ja/i.test(l) && z!=='Asia/Tokyo'; };
+  const days=+$('range').value, since=days?new Date(Date.now()-(days===1?0:days-1)*864e5):null; if(since) since.setHours(0,0,0,0);
+  const inRange=t=>!since||new Date(t)>=since;
+  let nBot=0;
+  const M=RAW.maker.map(r=>{ const o={}; H.forEach((h,i)=>o[h]=r[i]); return o; })
+    .filter(o=>/dokoko\.mendomilab\.com/.test(String(o['ページ']||''))&&inRange(o['日時'])&&!(exOwn&&(+o['運営']||own.has(o['端末ID']))))
+    .filter(o=>{ if(exBot&&isBot(o)){ if(o['できごと']==='open') nBot++; return false; } return true; });
+  const R=RAW.results.map(r=>({t:r[0],sid:r[1],win:+r[4],c:r[5],ref:String(r[6]||'')})).filter(o=>inRange(o.t)&&/^aru-/.test(o.ref));
+  const V=new Map(); M.forEach(o=>{ const k=o['訪問ID']||('x'+Math.random()); if(!V.has(k)) V.set(k,{open:null,dur:0,scroll:0,seen:0,tags:new Set()});
+    const v=V.get(k); if(o['できごと']==='open'&&!v.open) v.open=o;
+    v.dur=Math.max(v.dur,+o['滞在(秒)']||0); v.scroll=Math.max(v.scroll,+o['スクロール(%)']||0); v.seen=Math.max(v.seen,+o['見た区切り']||0);
+    if(o['シェア']) v.tags.add(String(o['シェア'])); });
+  const vis=[...V.values()].filter(v=>v.open);
+  const name=v=>v.open['学校名']||'(一覧・トップ)';
+  const go=vis.filter(v=>v.tags.has('go-dokoko')).length, vy=vis.filter(v=>v.tags.has('vote-yes')).length, vn=vis.filter(v=>v.tags.has('vote-no')).length, ps=vis.filter(v=>v.tags.has('post')).length;
+  const durs=vis.map(v=>v.dur).filter(x=>x>0);
+  let h='';
+  if(exBot&&nBot) h+=`<div class="sub" style="margin-top:8px">海外のロボットらしい訪問 ${nBot}件を除いています</div>`;
+  if(!vis.length) h+=`<div class="note" style="margin-top:12px">まだ記録がありません。</div>`;
+  h+=`<div class="kpis" style="margin-top:12px">${[kpi(vis.length,'ページを開いた'),kpi(new Set(vis.map(v=>v.open['端末ID'])).size,'人（端末）'),kpi(median(durs)!=null?median(durs)+'秒':'—','見た時間（中央値）'),
+    kpi(pct(vis.filter(v=>v.scroll>=75).length,vis.length),'下のほうまで見た'),kpi(go,'どこ高へ進んだ'),kpi(R.length,'どこ高で遊んだ（結果まで）'),kpi(vy+' / '+vn,'わかる / ちがう を押した訪問'),kpi(ps,'投稿した訪問')].join('')}</div>`;
+  h+='<div class="grid" style="margin-top:12px">';
+  h+=hbars('来た元',count(vis,v=>v.open['来た元']||'(なし)'));
+  h+=hbars('開かれたページ',count(vis,name));
+  h+=hbars('見た時間',count(vis,v=>bucket(v.dur,[5,15,30,60,180],['〜4秒','5〜14秒','15〜29秒','30〜59秒','1〜3分','3分〜']),['〜4秒','5〜14秒','15〜29秒','30〜59秒','1〜3分','3分〜']),{b:1});
+  h+=hbars('どこまで下に見たか',count(vis,v=>bucket(v.scroll,[25,50,75,95],['〜24%','25〜49%','50〜74%','75〜94%','95〜100%']),['〜24%','25〜49%','50〜74%','75〜94%','95〜100%']),{b:1});
+  h+=hbars('どこ高で遊んだ学校ページ',count(R,o=>o.ref.slice(4)));
+  h+=hbars('OS',count(vis,v=>v.open['OS']||'不明'));
+  h+='</div>';
+  h+=`<div class="card"><h2>訪問の一覧（新しい順）</h2><div class="scroll"><table><tr><th>日時</th><th>ページ</th><th>来た元</th><th>来た元URL</th><th>見た時間</th><th>スクロール</th><th>見たあるある</th><th>したこと</th><th>OS</th></tr>`+
+    vis.slice().reverse().map(v=>`<tr><td>${esc(String(v.open['日時']).replace('T',' ').slice(5,16))}</td><td>${esc(name(v))}</td><td>${esc(v.open['来た元']||'')}</td><td>${esc(String(v.open['来た元URL']||'').slice(0,60))}</td><td>${v.dur}秒</td><td>${v.scroll}%</td><td>${v.seen}</td><td>${esc([...v.tags].join(' '))}</td><td>${esc(v.open['OS']||'')}</td></tr>`).join('')+`</table></div></div>`;
+  $('out').innerHTML=h;
+}
+</script>
+</body>
+</html>
