@@ -133,12 +133,25 @@
   .album ul{padding:0;margin:8px 0 12px}
 
 #sendOv{position:fixed;inset:0;background:#2a242099;display:flex;align-items:center;justify-content:center;z-index:50;padding:18px}
-#sendOv .box{background:var(--card);border-radius:20px;padding:22px 20px 16px;max-width:400px;width:100%;text-align:center;box-shadow:0 10px 40px #0005;animation:popin .35s ease}
+#sendOv .box{background:var(--card);border-radius:20px;padding:18px 18px 10px;max-width:400px;width:100%;max-height:94vh;overflow:auto;text-align:center;box-shadow:0 10px 40px #0005;animation:popin .35s ease}
 @keyframes popin{0%{transform:scale(.85);opacity:0}100%{transform:scale(1);opacity:1}}
 #sendOv .ovbig{font-size:30px;font-weight:900;color:var(--accent);line-height:1.3;margin:4px 0 6px}
-#sendOv .lead{font-size:16px;font-weight:700;margin-bottom:14px}
+#sendOv .lead{font-size:16px;font-weight:900;line-height:1.5;margin-bottom:2px;color:var(--ink)}
 #sendOv .sendBtn{display:block;width:100%;background:var(--accent);color:#fff;border:0;border-radius:14px;padding:18px 10px;font-size:20px;font-weight:900;font-family:inherit;box-shadow:0 4px 0 #8f3a22}
 #sendOv .pv{background:#f5efe4;border:1px dashed var(--line);border-radius:10px;text-align:left;font-size:12px;line-height:1.7;color:#5a4f45;padding:10px 12px;margin:12px 0 8px;white-space:pre-wrap;word-break:break-all}
+#sendOv .rk{background:#fff;border:2px solid var(--line);border-radius:14px;padding:10px 12px 8px;margin:6px 0 12px}
+#sendOv .rk .school{font-size:15px;font-weight:700}
+#sendOv .rk .pos{font-size:15px;margin:2px 0 4px}#sendOv .rk .pos b{font-size:32px;font-weight:900;color:var(--accent);margin:0 2px}
+#sendOv .rk .pos2{font-size:16px;font-weight:900;margin:4px 0}#sendOv .rk .pos2 b{font-size:26px;color:var(--accent)}
+#sendOv .rk .zen{font-size:12px;color:var(--sub)}
+#sendOv .mini{list-style:none;margin:4px 0 0;padding:0;text-align:left;font-size:13px}
+#sendOv .mini li{display:flex;justify-content:space-between;padding:3px 8px;border-radius:8px}
+#sendOv .mini li.me{background:#fbe4dc;font-weight:900}
+#sendOv .next{font-size:13px;margin-top:4px;color:var(--accent);font-weight:700}
+#sendOv .ovsub{font-size:12px;color:var(--sub);margin:0 0 10px;background:none}
+#sendOv .lineBtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:#06C755;color:#fff;border-radius:14px;padding:15px 10px;font-size:19px;font-weight:900;text-decoration:none;box-shadow:0 4px 0 #04913d}
+#sendOv .lineBtn i{font-style:normal;background:#fff;color:#06C755;border-radius:6px;font-size:11px;padding:2px 5px;font-weight:900}
+#sendOv .other{display:block;width:100%;background:none;border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:10px;font-size:14px;font-family:inherit;color:var(--ink)}
 #sendOv .later{background:none;border:0;color:var(--sub);font-size:13px;padding:8px;font-family:inherit}
 </style>
 </head>
@@ -772,7 +785,7 @@ function end(win,t){
   try{ const sr=(D.schools[t.sid]||{}).region; if(sr) localStorage.setItem('koukou-pref', prefLabel(sr)); }catch(e){}
   $('hist').innerHTML=log.map(x=>x.replace(/</g,'&lt;')).join('<br>');
   $('counter').textContent='結果'; show('s-end');
-  if(win){ $('ovBig').textContent=g.n+'問でバレた！'; $('ovPv').textContent=txt; setTimeout(()=>{ if(!$('s-end').classList.contains('hidden')) $('sendOv').style.display='flex'; },900); }
+  if(win){ $('ovBig').textContent=g.n+'問でバレた！'; $('ovPv').textContent=txt; $('ovPv').style.display='none'; $('ovSend').textContent='ほかのアプリで送る'; try{ ovRankFill(t.sid, t.school, win, g.n, dv); }catch(e){} setTimeout(()=>{ if(!$('s-end').classList.contains('hidden')) $('sendOv').style.display='flex'; },900); }
   document.querySelectorAll('#s-q [data-a]').forEach(b=>b.onclick=()=>{ const a=b.dataset.a; if(curQ===null){ pintoAnswer(a); return ask(); } answerQ(a); ask(); });
 }
 let postSid=null;
@@ -1243,17 +1256,45 @@ drawMap(); g=E.newGame(D); updateMap(false); $('maplabel').textContent='';
 <div id="sendOv" style="display:none"><div class="box">
 <div class="small">あなたの母校は</div>
 <div class="ovbig" id="ovBig"></div>
-<div class="lead">友だちにも挑戦させてみる？</div>
-<button class="sendBtn" id="ovSend">友だちに送る</button>
-<div class="pv" id="ovPv"></div>
+<div class="rk" id="ovRank"><div class="small">ランキングを読みこみ中…</div></div>
+<div class="lead" id="ovLead">同級生に送って<br>順位を上げよう</div>
+<div class="ovsub">友だちが参戦すると＋2点</div>
+<a class="lineBtn" id="ovLine" href="#" target="_blank" rel="noopener"><i>LINE</i>LINEで送る</a>
+<button class="other" id="ovSend">ほかのアプリで送る</button>
+<div class="pv" id="ovPv" style="display:none"></div>
 <button class="later" id="ovLater">あとで</button>
 </div></div>
 <script>
 document.getElementById('ovLater').onclick=()=>{ document.getElementById('sendOv').style.display='none'; try{ logShare('pop-later'); }catch(e){} };
+document.getElementById('ovLine').onclick=()=>{ try{ logShare('pop-line'); }catch(e){} document.getElementById('ovLine').href='https://line.me/R/share?text='+encodeURIComponent((LAST&&LAST.txt2)||LAST.txt); };
 document.getElementById('ovSend').onclick=async()=>{ try{ logShare('pop-send'); }catch(e){}
-  const btn=document.getElementById('ovSend');
-  try{ if(navigator.share){ await navigator.share({text:LAST.txt}); document.getElementById('sendOv').style.display='none'; return; } }catch(e){ if(e&&e.name==='AbortError') return; }
-  try{ await navigator.clipboard.writeText(LAST.txt); btn.textContent='コピーしました！LINEなどに貼ってね'; }catch(e){ btn.textContent='下の文を長押しでコピーしてね'; } };
+  const btn=document.getElementById('ovSend'), t=(LAST&&LAST.txt2)||LAST.txt;
+  try{ if(navigator.share){ await navigator.share({text:t}); document.getElementById('sendOv').style.display='none'; return; } }catch(e){ if(e&&e.name==='AbortError') return; }
+  const pv=document.getElementById('ovPv'); pv.textContent=t; pv.style.display='block';
+  try{ await navigator.clipboard.writeText(t); btn.textContent='コピーしました！LINEなどに貼ってね'; }catch(e){ btn.textContent='下の文を長押しでコピーしてね'; } };
+// 県内ランキングを読んで カードと送る文を作る
+function ovRankFill(sid, school, win, n, dv){
+  const nm=school.replace(/（.*/,''), sr=(D.schools[sid]||{}).region, pref=sr?prefLabel(sr):'', tate=tateLines(win,n,dv).join('\n'), url=APP_URL+'?ref=share.'+scode(sid);
+  const box=document.getElementById('ovRank'), lead=document.getElementById('ovLead'), line=document.getElementById('ovLine');
+  const put=(head,tail)=>{ LAST.txt2=head+'\n\n'+tate+'\n\n'+tail+'\n'+url; line.href='https://line.me/R/share?text='+encodeURIComponent(LAST.txt2); };
+  const unranked=(need)=>{ box.innerHTML=`<div class="school">${escG(nm)}は</div><div class="pos2">あと<b>${need}</b>人の参戦で<br>${escG(pref||'')}ランキングにのります</div><div class="zen">2人以上が参戦した学校がのります</div>`;
+    lead.innerHTML='同級生に送って<br>ランキングにのせよう'; put(`${nm} いま参戦中！`,`あと${need}人の参戦でランキング入り！みんなで参戦しよう😆`); };
+  put(`${nm} いま参戦中！`,'みんなで参戦しよう😆');
+  if(!GAS){ unranked(1); return; }
+  try{ GAS.withSuccessHandler(rows=>{ rows=(rows||[]).filter(x=>x&&typeof x.sid==='string');
+      const all=rows.filter(x=>x.u>=2).sort((a,b)=>b.pts-a.pts||b.u-a.u);
+      const P=all.filter(x=>D.schools[x.sid] && prefLabel(D.schools[x.sid].region)===pref);
+      const i=P.findIndex(x=>x.sid===sid);
+      if(i<0){ const me=rows.find(x=>x.sid===sid); unranked(Math.max(1,2-((me&&+me.u)||1))); return; }
+      const k=i+1, gi=all.findIndex(x=>x.sid===sid)+1, sn=x=>escG(shortName(x.sid));
+      const nb=P.slice(Math.max(0,i-1),i+2).map(x=>`<li${x.sid===sid?' class="me"':''}><span>${P.indexOf(x)+1}位　${sn(x)}</span><span>${x.pts}点</span></li>`).join('');
+      const need=i>0?(P[i-1].pts-P[i].pts+1):0;
+      box.innerHTML=`<div class="school">${escG(nm)}は いま</div><div class="pos">${escG(pref)}で<b>${k}</b>位</div><ul class="mini">${nb}</ul>`+
+        (need?`<div class="next">あと${need}点で${k-1}位！</div>`:`<div class="next">${escG(pref)}で1位！</div>`)+`<div class="zen">全国では ${gi}位</div>`;
+      lead.innerHTML=need?'同級生に送って<br>順位を上げよう':'同級生に送って<br>1位を守ろう';
+      put(`${nm} いま${pref}で${k}位！`, need?`あと${need}点で${k-1}位！みんなで参戦しよう😆`:`${pref}で1位！みんなで参戦しよう😆`);
+    }).withFailureHandler(()=>unranked(1)).getRanking(); }catch(e){ unranked(1); }
+}
 </script>
 </body>
 </html>
